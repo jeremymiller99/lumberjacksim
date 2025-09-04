@@ -1,0 +1,72 @@
+{
+  "health": 120,
+  "currentRegionId": "forest1",
+  "skillExperience": [
+    [
+      "lumber",
+      395
+    ]
+  ],
+  "backpack": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "gold",
+        "quantity": 130
+      }
+    ]
+  },
+  "hotbar": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "rusty_axe"
+      },
+      {
+        "position": 1,
+        "itemId": "rusty_axe"
+      },
+      {
+        "position": 2,
+        "itemId": "iron_axe"
+      },
+      {
+        "position": 3,
+        "itemId": "raw_log",
+        "quantity": 60
+      }
+    ]
+  },
+  "questLog": {
+    "quests": [
+      {
+        "questId": "first-chop",
+        "state": "completed",
+        "objectiveProgress": {
+          "chop-first-tree": 1,
+          "talk-to-merchant": 1
+        }
+      },
+      {
+        "questId": "learn-to-sell",
+        "state": "active",
+        "objectiveProgress": {
+          "collect-wood": 6,
+          "sell-wood": 0,
+          "talk-about-tools": 0
+        }
+      }
+    ]
+  },
+  "storage": {
+    "items": []
+  },
+  "wearables": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "straw_hat"
+      }
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "health": 120,
+  "currentRegionId": "forest1",
+  "skillExperience": [
+    [
+      "lumber",
+      415
+    ]
+  ],
+  "backpack": {
+    "items": []
+  },
+  "hotbar": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "gold",
+        "quantity": 410
+      },
+      {
+        "position": 2,
+        "itemId": "wood_axe"
+      }
+    ]
+  },
+  "questLog": {
+    "quests": [
+      {
+        "questId": "first-chop",
+        "state": "completed",
+        "objectiveProgress": {
+          "chop-first-tree": 1,
+          "talk-to-merchant": 1
+        }
+      },
+      {
+        "questId": "learn-to-sell",
+        "state": "completed",
+        "objectiveProgress": {
+          "collect-wood": 6,
+          "sell-wood": 3,
+          "talk-about-tools": 1
+        }
+      },
+      {
+        "questId": "upgrade-axe",
+        "state": "completed",
+        "objectiveProgress": {
+          "earn-gold": 25,
+          "buy-wood-axe": 1,
+          "test-new-axe": 3,
+          "celebrate-success": 1
+        }
+      }
+    ]
+  },
+  "storage": {
+    "items": []
+  }
+}

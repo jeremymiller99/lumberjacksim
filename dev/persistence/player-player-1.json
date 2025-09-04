@@ -1,0 +1,59 @@
+{
+  "health": 120,
+  "currentRegionId": "forest1",
+  "currentRegionSpawnFacingAngle": 0,
+  "currentRegionSpawnPoint": {
+    "x": 0,
+    "y": 10,
+    "z": 0
+  },
+  "skillExperience": [
+    [
+      "agility",
+      8
+    ],
+    [
+      "lumber",
+      293
+    ],
+    [
+      "bartering",
+      92
+    ]
+  ],
+  "backpack": {
+    "items": []
+  },
+  "hotbar": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "gold",
+        "quantity": 200
+      },
+      {
+        "position": 1,
+        "itemId": "wood_axe"
+      },
+      {
+        "position": 3,
+        "itemId": "raw_log",
+        "quantity": 110
+      },
+      {
+        "position": 2,
+        "itemId": "quality_wood",
+        "quantity": 4
+      }
+    ]
+  },
+  "questLog": {
+    "quests": []
+  },
+  "storage": {
+    "items": []
+  },
+  "wearables": {
+    "items": []
+  }
+}

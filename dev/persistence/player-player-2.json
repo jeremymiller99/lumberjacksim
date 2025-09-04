@@ -1,0 +1,38 @@
+{
+  "health": 110,
+  "currentRegionId": "forest1",
+  "skillExperience": [
+    [
+      "lumber",
+      166
+    ]
+  ],
+  "backpack": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "gold",
+        "quantity": 70
+      }
+    ]
+  },
+  "hotbar": {
+    "items": [
+      {
+        "position": 0,
+        "itemId": "wood_axe"
+      },
+      {
+        "position": 1,
+        "itemId": "raw_log",
+        "quantity": 135
+      }
+    ]
+  },
+  "questLog": {
+    "quests": []
+  },
+  "storage": {
+    "items": []
+  }
+}
