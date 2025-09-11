@@ -20,7 +20,7 @@ export default [
   // Currency
   GoldItem,
   
-  // Wood
+  // Wood & Materials
   RawLogItem,
   
   // Axes (progression: Rusty -> Iron -> Gold)

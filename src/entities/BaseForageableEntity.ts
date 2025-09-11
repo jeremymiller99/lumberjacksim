@@ -123,7 +123,6 @@ export default class BaseForageableEntity extends BaseEntity {
 
     // Show progress on the existing nameplate by updating its health bar
     const progressText = this.name.includes('Tree') ? 'Chopping...' : 'Foraging...';
-    interactor.showNotification(`${progressText} starting`, 'new');
     
     // Update the existing nameplate to show progress
     if (this._nameplateSceneUI) {
@@ -133,9 +132,6 @@ export default class BaseForageableEntity extends BaseEntity {
         maxHealth: 100, // Max progress is 100%
         interactable: false, // Hide interact text during chopping
       });
-      interactor.showNotification('Chop UI attached to tree', 'new');
-    } else {
-      interactor.showNotification('Chop UI: missing nameplate on entity', 'warning');
     }
 
     // Progress tracking
@@ -159,15 +155,11 @@ export default class BaseForageableEntity extends BaseEntity {
         maxHealth: 100
       });
 
-      // On-screen debug at 25% increments only (to avoid spam)
+      // Progress tracking for internal use (notifications removed to reduce spam)
       const bucket = Math.floor(pct / 25);
       if (bucket !== this._lastProgressBucket) {
         this._lastProgressBucket = bucket;
-        if (pct >= 100) {
-          interactor.showNotification('Chopping: 100% (complete)', 'complete');
-        } else {
-          interactor.showNotification(`Chopping: ${pct}%`, 'new');
-        }
+        // Removed percentage notifications to reduce spam
       }
 
       if (progress >= 100) {
@@ -194,7 +186,6 @@ export default class BaseForageableEntity extends BaseEntity {
           interactActionText: this.interactActionText,
         });
       }
-      interactor.showNotification('Chopping finished', 'complete');
 
       if (interactor.isSpawned) {
         interactor.setIsMovementDisabled(false);

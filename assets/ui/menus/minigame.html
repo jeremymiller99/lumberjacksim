@@ -1,0 +1,631 @@
+<!-- Beehive Popup -->
+<div class="beehive-popup" id="beehive-popup" style="display: none;">
+  <div class="beehive-popup-content">
+    <h2 id="beehive-popup-title">You Hit a Beehive!</h2>
+    <p id="beehive-popup-message">The tree had a hidden beehive! Prepare to calm the angry bees in a minigame.</p>
+    <div class="beehive-popup-icon">🐝</div>
+  </div>
+</div>
+
+<!-- Minigame UI Overlay -->
+<div class="minigame-overlay" id="minigame-overlay">
+  <div class="minigame-container">
+    <div class="minigame-header">
+      <h2 class="minigame-title" id="minigame-title">Minigame</h2>
+      <div class="minigame-timer">
+        <span id="minigame-timer">00:00</span>
+      </div>
+      <button class="minigame-close" id="minigame-close">×</button>
+    </div>
+    
+    <div class="minigame-description" id="minigame-description">
+      Game description goes here
+    </div>
+    
+    <!-- Countdown Overlay -->
+    <div class="countdown-overlay" id="countdown-overlay" style="display: none;">
+      <div class="countdown-content">
+        <h3>Get Ready!</h3>
+        <div class="countdown-number" id="countdown-number">3</div>
+        <p>Read the instructions above and prepare yourself!</p>
+      </div>
+    </div>
+    
+    <div class="minigame-content" id="minigame-content">
+      <!-- Bee Minigame -->
+      <div class="bee-minigame" id="bee-minigame" style="display: none;">
+        <div class="bee-game-area" id="bee-game-area">
+          <!-- Bees will be spawned here dynamically -->
+        </div>
+        <div class="bee-score">
+          <span>Hearts: <span id="bee-hearts">3</span> / <span id="bee-max-hearts">3</span></span>
+        </div>
+      </div>
+      
+      <!-- Future minigames can be added here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentMinigame = null;
+  let minigameUpdateInterval = null;
+
+  // Data handlers
+  hytopia.onData(data => {
+    if (data.type === 'openMinigame') {
+      openMinigame(data);
+    }
+    
+    if (data.type === 'closeMinigame') {
+      closeMinigame();
+    }
+    
+    if (data.type === 'minigameUpdate') {
+      updateMinigame(data);
+    }
+    
+    if (data.type === 'showBeehivePopup') {
+      showBeehivePopup(data);
+    }
+    
+    if (data.type === 'startCountdown') {
+      startCountdown(data);
+    }
+  });
+
+  function openMinigame(data) {
+    currentMinigame = data;
+    
+    // Set up the UI
+    document.getElementById('minigame-title').textContent = data.name;
+    document.getElementById('minigame-description').textContent = data.description;
+    
+    // Hide all minigame types
+    document.querySelectorAll('.minigame-content > div').forEach(el => {
+      el.style.display = 'none';
+    });
+    
+    // Show the appropriate minigame
+    switch (data.minigameId) {
+      case 'bee_minigame':
+        setupBeeMinigame(data);
+        break;
+    }
+    
+    // Show the overlay
+    document.getElementById('minigame-overlay').style.display = 'flex';
+    hytopia.lockPointer(false, true);
+    
+    // Only start timer if there's no countdown, otherwise wait for countdown to finish
+    if (!data.countdownSeconds || data.countdownSeconds === 0) {
+      startTimerUpdate(data.durationMs);
+    }
+  }
+
+  function closeMinigame() {
+    document.getElementById('minigame-overlay').style.display = 'none';
+    hytopia.lockPointer(true);
+    
+    if (minigameUpdateInterval) {
+      clearInterval(minigameUpdateInterval);
+      minigameUpdateInterval = null;
+    }
+    
+    currentMinigame = null;
+  }
+
+  function updateMinigame(data) {
+    if (!currentMinigame || currentMinigame.minigameId !== data.minigameId) return;
+    
+    switch (data.minigameId) {
+      case 'bee_minigame':
+        updateBeeMinigame(data.gameData);
+        break;
+    }
+  }
+
+  function startTimerUpdate(durationMs) {
+    const startTime = Date.now();
+    
+    // Set initial timer display
+    const totalSeconds = Math.ceil(durationMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const displaySeconds = totalSeconds % 60;
+    document.getElementById('minigame-timer').textContent = 
+      `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+    
+    minigameUpdateInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, durationMs - elapsed);
+      
+      const seconds = Math.ceil(remaining / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const displaySeconds = seconds % 60;
+      
+      document.getElementById('minigame-timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+      
+      if (remaining <= 0) {
+        clearInterval(minigameUpdateInterval);
+        minigameUpdateInterval = null;
+      }
+    }, 100);
+  }
+
+  // Bee Minigame Functions
+  function setupBeeMinigame(data) {
+    const beeMinigame = document.getElementById('bee-minigame');
+    beeMinigame.style.display = 'block';
+    
+    const gameArea = document.getElementById('bee-game-area');
+    gameArea.innerHTML = ''; // Clear existing bees
+    
+    // Set up initial game state
+    updateBeeMinigame(data.gameData);
+  }
+
+  function updateBeeMinigame(gameData) {
+    const gameArea = document.getElementById('bee-game-area');
+    const heartsElement = document.getElementById('bee-hearts');
+    const maxHeartsElement = document.getElementById('bee-max-hearts');
+    
+    // Update hearts display
+    heartsElement.textContent = gameData.hearts;
+    maxHeartsElement.textContent = gameData.maxHearts;
+    
+    // Clean up removed bees
+    const existingBees = Array.from(gameArea.children);
+    const currentBeeIds = gameData.bees.map(bee => bee.id);
+    existingBees.forEach(beeElement => {
+      if (!currentBeeIds.includes(beeElement.id)) {
+        beeElement.remove();
+      }
+    });
+    
+    // Update bees
+    gameData.bees.forEach(bee => {
+      let beeElement = document.getElementById(bee.id);
+      
+      if (!beeElement) {
+        // Create new bee element
+        beeElement = document.createElement('div');
+        beeElement.id = bee.id;
+        beeElement.className = 'bee';
+        beeElement.addEventListener('click', () => handleBeeClick(bee.id));
+        gameArea.appendChild(beeElement);
+      }
+      
+      // Update bee properties
+      beeElement.style.left = bee.x + '%';
+      beeElement.style.top = bee.y + '%';
+      beeElement.style.width = bee.size + 'px';
+      beeElement.style.height = bee.size + 'px';
+      
+      // Update bee appearance
+      if (bee.hasHitPlayer) {
+        beeElement.classList.add('bee-eliminated');
+        beeElement.classList.remove('bee-angry', 'bee-calm');
+      } else {
+        beeElement.classList.add('bee-angry');
+        beeElement.classList.remove('bee-calm', 'bee-eliminated');
+      }
+    });
+  }
+
+  function handleBeeClick(beeId) {
+    if (!currentMinigame) return;
+    
+    hytopia.sendData({
+      type: 'minigameInput',
+      inputData: {
+        type: 'beeClick',
+        beeId: beeId
+      }
+    });
+  }
+
+  // Event listeners
+  document.getElementById('minigame-close').addEventListener('click', () => {
+    hytopia.sendData({
+      type: 'minigameInput',
+      inputData: {
+        type: 'cancel'
+      }
+    });
+  });
+
+  // Beehive popup function
+  function showBeehivePopup(data) {
+    const popup = document.getElementById('beehive-popup');
+    const title = document.getElementById('beehive-popup-title');
+    const message = document.getElementById('beehive-popup-message');
+    
+    title.textContent = data.title;
+    message.textContent = data.message;
+    
+    popup.style.display = 'flex';
+    
+    // Auto-hide after duration
+    setTimeout(() => {
+      popup.style.display = 'none';
+    }, data.duration || 2000);
+  }
+  
+  // Countdown function
+  function startCountdown(data) {
+    const overlay = document.getElementById('countdown-overlay');
+    const numberElement = document.getElementById('countdown-number');
+    
+    let countdown = data.countdownSeconds;
+    overlay.style.display = 'flex';
+    
+    const countdownInterval = setInterval(() => {
+      numberElement.textContent = countdown;
+      numberElement.classList.add('countdown-pulse');
+      
+      setTimeout(() => {
+        numberElement.classList.remove('countdown-pulse');
+      }, 500);
+      
+      countdown--;
+      
+      if (countdown < 0) {
+        clearInterval(countdownInterval);
+        overlay.style.display = 'none';
+        
+        // Start the minigame timer now that countdown is finished
+        if (currentMinigame) {
+          startTimerUpdate(currentMinigame.durationMs);
+        }
+      }
+    }, 1000);
+  }
+
+  // Escape key to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && currentMinigame) {
+      hytopia.sendData({
+        type: 'minigameInput',
+        inputData: {
+          type: 'cancel'
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+  /* Beehive Popup Styles */
+  .beehive-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    user-select: none;
+  }
+  
+  .beehive-popup-content {
+    background: linear-gradient(145deg, #FFD700, #FFA500);
+    border: 3px solid #FF8C00;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: popup-bounce 0.5s ease-out;
+    max-width: 400px;
+  }
+  
+  .beehive-popup-content h2 {
+    margin: 0 0 20px 0;
+    color: #8B4513;
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .beehive-popup-content p {
+    margin: 0 0 20px 0;
+    color: #654321;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  
+  .beehive-popup-icon {
+    font-size: 48px;
+    animation: bee-wiggle 0.5s ease-in-out infinite alternate;
+  }
+  
+  @keyframes popup-bounce {
+    0% { transform: scale(0.3) translateY(-50px); opacity: 0; }
+    50% { transform: scale(1.1) translateY(0); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  
+  @keyframes bee-wiggle {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+  }
+
+  .minigame-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    user-select: none;
+  }
+
+  .minigame-container {
+    background: linear-gradient(145deg, #2a2a2a, #1e1e1e);
+    border: 2px solid #444;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    width: 800px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .minigame-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #3a3a3a, #2d2d2d);
+    border-bottom: 1px solid #444;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .minigame-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  }
+
+  .minigame-timer {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffeb3b;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  }
+
+  .minigame-close {
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 6px;
+    color: #ff6b6b;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .minigame-close:hover {
+    background: rgba(255, 0, 0, 0.3);
+    transform: scale(1.05);
+  }
+
+  .minigame-description {
+    padding: 16px 20px;
+    color: #cccccc;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+  }
+
+  .minigame-content {
+    flex: 1;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  /* Countdown Overlay Styles */
+  .countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 12px;
+  }
+  
+  .countdown-content {
+    text-align: center;
+    color: white;
+  }
+  
+  .countdown-content h3 {
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    color: #FFD700;
+  }
+  
+  .countdown-number {
+    font-size: 120px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    margin: 20px 0;
+    transition: transform 0.3s ease;
+  }
+  
+  .countdown-pulse {
+    transform: scale(1.2);
+    animation: countdown-glow 0.5s ease-out;
+  }
+  
+  .countdown-content p {
+    margin: 20px 0 0 0;
+    font-size: 16px;
+    color: #cccccc;
+  }
+  
+  @keyframes countdown-glow {
+    0% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+    50% { text-shadow: 0 0 40px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.8); }
+    100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+  }
+
+  /* Bee Minigame Styles */
+  .bee-minigame {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bee-game-area {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+    border: 2px solid #444;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  .bee {
+    position: absolute;
+    background: #FFD700;
+    border: 2px solid #FFA500;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+
+  .bee::before {
+    content: '🐝';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 70%;
+  }
+
+  .bee:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  }
+
+  .bee-angry {
+    background: #FF6B6B;
+    border-color: #FF4444;
+    animation: angry-buzz 0.3s ease-in-out infinite alternate;
+  }
+
+  .bee-angry::before {
+    content: '🐝💢';
+  }
+
+  .bee-calm {
+    background: #90EE90;
+    border-color: #32CD32;
+    opacity: 0.6;
+    cursor: default;
+    animation: none;
+  }
+
+  .bee-calm::before {
+    content: '🐝😌';
+  }
+
+  .bee-calm:hover {
+    transform: translate(-50%, -50%);
+    box-shadow: none;
+  }
+
+  .bee-eliminated {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  @keyframes angry-buzz {
+    0% { transform: translate(-50%, -50%) rotate(-2deg); }
+    100% { transform: translate(-50%, -50%) rotate(2deg); }
+  }
+
+  .bee-score {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #444;
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 900px) {
+    .minigame-container {
+      width: 95%;
+      height: 80%;
+      margin: 10px;
+    }
+    
+    .bee {
+      min-width: 40px;
+      min-height: 40px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .minigame-header {
+      padding: 12px 16px;
+    }
+    
+    .minigame-title {
+      font-size: 16px;
+    }
+    
+    .minigame-timer {
+      font-size: 14px;
+      padding: 3px 8px;
+    }
+    
+    .minigame-content {
+      padding: 16px;
+    }
+    
+    .bee {
+      min-width: 35px;
+      min-height: 35px;
+    }
+  }
+</style>

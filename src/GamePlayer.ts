@@ -44,6 +44,7 @@ type SerializedGamePlayerData = {
   skillExperience: [SkillId, number][];
   backpack: SerializedItemInventoryData;
   hotbar: SerializedItemInventoryData;
+  hotbarSelectedIndex?: number; // Optional for backward compatibility
   questLog: SerializedQuestLogData;
   storage: SerializedItemInventoryData;
   wearables: SerializedItemInventoryData;
@@ -499,6 +500,10 @@ export default class GamePlayer {
       const storageSuccess = this.storage.loadFromSerializedData(playerData.storage);
       const wearablesSuccess = this.wearables.loadFromSerializedData(playerData.wearables || { items: [] });
       
+      // Restore hotbar selected index (default to 0 for backward compatibility)
+      const selectedIndex = playerData.hotbarSelectedIndex ?? 0;
+      this.hotbar.setSelectedIndex(selectedIndex);
+      
       // Restore quest log
       const questLogSuccess = this.questLog.loadFromSerializedData(playerData.questLog);
 
@@ -630,6 +635,13 @@ export default class GamePlayer {
     if (data.type === 'setSelectedHotbarIndex') {
       this.hotbar.setSelectedIndex(data.index);
     }
+    
+    if (data.type === 'minigameInput') {
+      // Handle minigame inputs - use dynamic import to avoid circular dependencies
+      import('./systems/MinigameManager').then(({ default: MinigameManager }) => {
+        MinigameManager.handleUIInput(this.player.id, data.inputData);
+      });
+    }
   }
 
   private _loadUI(): void {
@@ -667,6 +679,7 @@ export default class GamePlayer {
       skillExperience: Array.from(this._skillExperience.entries()),
       backpack: this.backpack.serialize(),
       hotbar: this.hotbar.serialize(),
+      hotbarSelectedIndex: this.hotbar.selectedIndex,
       questLog: this.questLog.serialize(),
       storage: this.storage.serialize(),
       wearables: this.wearables.serialize(),
