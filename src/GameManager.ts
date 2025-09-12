@@ -6,6 +6,7 @@ import type GameRegion from './GameRegion';
 
 // Only lumber-related region
 import Forest1Region from './regions/forest1/Forest1Region';
+import HubRegion from './regions/Hub/HubRegion';
 
 export default class GameManager {
   public static readonly instance = new GameManager();
@@ -66,17 +67,25 @@ export default class GameManager {
   }
 
   public loadRegions(): void {
-    // Only Forest1 for lumber testing
+    const hubRegion = new HubRegion();
+    this._regions.set(hubRegion.id, hubRegion);
+    GameClock.instance.addRegionClockCycle(hubRegion);
+
     const forest1Region = new Forest1Region();
     this._regions.set(forest1Region.id, forest1Region);
     GameClock.instance.addRegionClockCycle(forest1Region);
-    this._startRegion = forest1Region;
 
-    console.log('GameManager: Loaded Forest1 region (lumber-only)');
+    // Spawn a portal in hub that leads to forest 1
+    hubRegion.spawnPortalTo(forest1Region, { x: 2, y: 2, z: -4 });
+
+    this._startRegion = hubRegion;
+
+    console.log('GameManager: Loaded Hub region (start) and Forest1 region');
   }
 
   private _selectWorldForPlayer = async (player: Player): Promise<World | undefined> => {
-    const gamePlayer = GamePlayer.getOrCreate(player);
-    return gamePlayer.currentRegion?.world ?? this._startRegion.world;
+    GamePlayer.getOrCreate(player);
+    // Always start players in the configured start region (hub)
+    return this._startRegion.world;
   }
 }
