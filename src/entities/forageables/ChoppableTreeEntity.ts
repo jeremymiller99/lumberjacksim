@@ -13,7 +13,7 @@ export type BaseChoppableTreeEntityPlayerEventPayloads = {
 }
 
 export type ChoppableTreeEntityOptions = {
-  treeType?: 'oak' | 'pine' | 'birch';
+  treeType?: 'oak' | 'pine' | 'birch' | 'palm' | 'burnt' | 'snow';
   maturity?: 'young' | 'mature' | 'ancient';
 } & Omit<BaseForageableEntityOptions, 'itemDrops' | 'forageDurationMs'>;
 

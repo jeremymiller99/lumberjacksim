@@ -5,7 +5,10 @@ import ItemRegistry from './items/ItemRegistry';
 import type GameRegion from './GameRegion';
 
 // Only lumber-related region
-import Forest1Region from './regions/forest1/Forest1Region';
+import OakForestRegion from './regions/oakForest/OakForestRegion';
+import CursedForestRegion from './regions/cursedForest/CursedForestRegion';
+import SandyForestRegion from './regions/sandyForest/SandyForestRegion';
+import SnowForestRegion from './regions/snowForest/SnowForestRegion';
 import HubRegion from './regions/Hub/HubRegion';
 
 export default class GameManager {
@@ -71,16 +74,31 @@ export default class GameManager {
     this._regions.set(hubRegion.id, hubRegion);
     GameClock.instance.addRegionClockCycle(hubRegion);
 
-    const forest1Region = new Forest1Region();
-    this._regions.set(forest1Region.id, forest1Region);
-    GameClock.instance.addRegionClockCycle(forest1Region);
+    const oakForestRegion = new OakForestRegion();
+    this._regions.set(oakForestRegion.id, oakForestRegion);
+    GameClock.instance.addRegionClockCycle(oakForestRegion);
 
-    // Spawn a portal in hub that leads to forest 1
-    hubRegion.spawnPortalTo(forest1Region, { x: 2, y: 2, z: -4 });
+    const cursedForestRegion = new CursedForestRegion();
+    this._regions.set(cursedForestRegion.id, cursedForestRegion);
+    GameClock.instance.addRegionClockCycle(cursedForestRegion);
+
+    const sandyForestRegion = new SandyForestRegion();
+    this._regions.set(sandyForestRegion.id, sandyForestRegion);
+    GameClock.instance.addRegionClockCycle(sandyForestRegion);
+
+    const snowForestRegion = new SnowForestRegion();
+    this._regions.set(snowForestRegion.id, snowForestRegion);
+    GameClock.instance.addRegionClockCycle(snowForestRegion);
+
+    // Spawn portals in Hub to each region at specified coordinates
+    hubRegion.spawnPortalTo(oakForestRegion, { x: 13, y: 1, z: -5 });
+    hubRegion.spawnPortalTo(cursedForestRegion, { x: 15, y: 1, z: 17 });
+    hubRegion.spawnPortalTo(sandyForestRegion, { x: -8, y: 1, z: 18 });
+    hubRegion.spawnPortalTo(snowForestRegion, { x: -6, y: 1, z: -8 });
 
     this._startRegion = hubRegion;
 
-    console.log('GameManager: Loaded Hub region (start) and Forest1 region');
+    console.log('GameManager: Loaded Hub, OakForest, CursedForest, SandyForest, and SnowForest regions');
   }
 
   private _selectWorldForPlayer = async (player: Player): Promise<World | undefined> => {

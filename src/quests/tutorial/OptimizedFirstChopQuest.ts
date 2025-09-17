@@ -3,7 +3,7 @@ import type GamePlayer from '../../GamePlayer';
 import OptimizedBaseQuest from '../OptimizedBaseQuest';
 import { BaseChoppableTreeEntityPlayerEvent } from '../../entities/forageables/ChoppableTreeEntity';
 import type { BaseChoppableTreeEntityPlayerEventPayloads } from '../../entities/forageables/ChoppableTreeEntity';
-import LumberMerchantEntity from '../../regions/forest1/npcs/LumberMerchantEntity';
+import LumberMerchantEntity from '../../regions/oakForest/npcs/LumberMerchantEntity';
 import LearnToSellQuest from './LearnToSellQuest';
 
 /**
