@@ -1,5 +1,4 @@
 // Item list including cosmetic wearables
-import GoldItem from './general/GoldItem';
 import RawLogItem from './materials/RawLogItem';
 import RustyAxeItem from './axes/RustyAxeItem';
 import IronAxeItem from './axes/IronAxeItem';
@@ -17,9 +16,6 @@ import SilverRingItem from './wearables/SilverRingItem';
 import NoblesCloakItem from './wearables/NoblesCloakItem';
 
 export default [
-  // Currency
-  GoldItem,
-  
   // Wood & Materials
   RawLogItem,
   

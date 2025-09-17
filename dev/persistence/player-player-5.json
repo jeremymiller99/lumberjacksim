@@ -1,10 +1,10 @@
 {
   "health": 110,
-  "currentRegionId": "oakForest",
+  "currentRegionId": "hub",
   "skillExperience": [
     [
       "lumber",
-      204
+      219
     ]
   ],
   "backpack": {
@@ -13,18 +13,9 @@
   "hotbar": {
     "items": [
       {
-        "position": 0,
-        "itemId": "gold",
-        "quantity": 65
-      },
-      {
-        "position": 1,
-        "itemId": "wood_axe"
-      },
-      {
         "position": 2,
         "itemId": "raw_log",
-        "quantity": 47
+        "quantity": 61
       }
     ]
   },
@@ -61,5 +52,16 @@
   },
   "storage": {
     "items": []
+  },
+  "currency": 0,
+  "hotbarSelectedIndex": 0,
+  "wearables": {
+    "items": []
+  },
+  "currentRegionSpawnFacingAngle": 0,
+  "currentRegionSpawnPoint": {
+    "x": 5,
+    "y": 2,
+    "z": 5
   }
 }

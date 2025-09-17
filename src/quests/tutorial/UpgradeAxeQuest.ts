@@ -12,7 +12,6 @@ import type { BaseChoppableTreeEntityPlayerEventPayloads } from '../../entities/
 import LumberMerchantEntity from '../../regions/oakForest/npcs/LumberMerchantEntity';
 import RustyAxeItem from '../../items/axes/RustyAxeItem';
 import RawLogItem from '../../items/materials/RawLogItem';
-import GoldItem from '../../items/general/GoldItem';
 
 export default class UpgradeAxeQuest extends BaseQuest {
   static readonly id = 'upgrade-axe';
@@ -20,9 +19,7 @@ export default class UpgradeAxeQuest extends BaseQuest {
   static readonly description = `Time to upgrade your equipment! Earn enough gold to buy a Rusty Axe and become a professional lumberjack.`;
 
   static readonly reward = {
-    items: [
-      { itemClass: GoldItem, quantity: 50 }, // Bonus gold to help with future purchases
-    ],
+    currency: 50, // Bonus gold to help with future purchases
     skillExperience: [
       { skillId: SkillId.LUMBER, amount: 150 },
     ],
@@ -79,18 +76,18 @@ export default class UpgradeAxeQuest extends BaseQuest {
               onSelect: (interactor: GamePlayerEntity) => {
                 // Actually perform the purchase transaction
                 const goldCost = RustyAxeItem.buyPrice || 25;
-                const hasEnoughGold = interactor.gamePlayer.getHeldItemQuantity(GoldItem) >= goldCost;
+                const hasEnoughGold = interactor.gamePlayer.currency >= goldCost;
                 
                 if (hasEnoughGold) {
                   // Remove gold and add axe
-                  if (interactor.gamePlayer.removeHeldItem(GoldItem, goldCost)) {
+                  if (interactor.gamePlayer.adjustGold(-goldCost)) {
                     if (interactor.gamePlayer.addHeldItem(RustyAxeItem, 1)) {
                       // Mark the axe purchase as complete
                       interactor.gamePlayer.questLog.adjustObjectiveProgress(this.id, 'buy-wood-axe', 1);
                       interactor.showNotification(`Purchased Rusty Axe for ${goldCost} gold!`, 'success');
                     } else {
                       // Failed to add axe (inventory full), refund gold
-                      interactor.gamePlayer.addHeldItem(GoldItem, goldCost);
+                      interactor.gamePlayer.adjustGold(goldCost);
                       interactor.showNotification('Your inventory is full! Clear some space and try again.', 'error');
                     }
                   } else {
@@ -108,7 +105,7 @@ export default class UpgradeAxeQuest extends BaseQuest {
         return interactor.gamePlayer.questLog.isQuestActive(this.id) &&
                interactor.gamePlayer.questLog.isQuestObjectiveCompleted(this.id, 'earn-gold') &&
                !interactor.gamePlayer.questLog.isQuestObjectiveCompleted(this.id, 'buy-wood-axe') &&
-               interactor.gamePlayer.getHeldItemQuantity(GoldItem) >= 25;
+               interactor.gamePlayer.currency >= 25;
       }
     },
 
@@ -160,7 +157,7 @@ export default class UpgradeAxeQuest extends BaseQuest {
     // Performance optimization: Event-driven gold tracking instead of polling
     const goldCheckListener = () => {
       if (gamePlayer.questLog.isQuestActive(this.id)) {
-        const currentGold = gamePlayer.getHeldItemQuantity(GoldItem);
+        const currentGold = gamePlayer.currency;
         if (currentGold >= 25 && !gamePlayer.questLog.isQuestObjectiveCompleted(this.id, 'earn-gold')) {
           gamePlayer.questLog.adjustObjectiveProgress(this.id, 'earn-gold', 25);
         }

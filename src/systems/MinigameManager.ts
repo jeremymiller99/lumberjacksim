@@ -80,7 +80,7 @@ export default class MinigameManager {
   }
   
   // Helper method to create minigame configs for different scenarios
-  public static createBeeMinigameConfig(chance: number = 0.33): MinigameConfig {
+  public static createBeeMinigameConfig(chance: number = 0.2): MinigameConfig {
     return {
       type: 'bee',
       chance

@@ -98,6 +98,27 @@
         }, 800 + delay);
       }
 
+      if (state.experienceGain) {
+        console.log(`Creating XP display: +${state.experienceGain} XP`);
+        const expEl = document.createElement('div');
+        expEl.className = 'entity-nameplate-experience';
+        expEl.textContent = `+${state.experienceGain} XP`;
+        
+        const delay = damageCount++ * 50;
+        
+        nameplate.appendChild(expEl);
+        
+        setTimeout(() => {
+          console.log('Starting XP animation');
+          expEl.classList.add('show');
+        }, delay);
+        setTimeout(() => {
+          expEl.remove();
+          damageCount--;
+          console.log('XP animation completed');
+        }, 1000 + delay);
+      }
+
       if (state.interactable) {
         interact.style.display = 'block';
       } else {
@@ -144,7 +165,9 @@
     function showDamageNumber(amount, type) {
       const numberEl = document.createElement('div');
       numberEl.className = `entity-nameplate-${type}`;
-      numberEl.textContent = type === 'damage' ? `-${amount}` : `+${amount}`;
+      // Round the amount to avoid displaying long decimals
+      const roundedAmount = Math.round(amount);
+      numberEl.textContent = type === 'damage' ? `-${roundedAmount}` : `+${roundedAmount}`;
       
       const delay = damageCount++ * 50;
       
@@ -287,6 +310,20 @@
     pointer-events: none;
   }
 
+  .entity-nameplate-experience {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffeb3b;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9), 1px 1px 0 #000, -1px -1px 0 #000, 0 0 12px rgba(255, 235, 59, 0.8);
+    opacity: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 100;
+  }
+
   .entity-nameplate-damage.show {
     animation: damageFloat 0.8s ease-out;
   }
@@ -297,6 +334,10 @@
 
   .entity-nameplate-dodged.show {
     animation: dodgedFloat 0.8s ease-out;
+  }
+
+  .entity-nameplate-experience.show {
+    animation: experienceFloat 1.0s ease-out;
   }
 
   @keyframes damageFloat {
@@ -320,6 +361,14 @@
     30% { transform: translateX(-50%) translateY(-14px) scale(1); }
     60% { transform: translateX(-50%) translateY(-18px) scale(1.05); }
     100% { opacity: 0; transform: translateX(-50%) translateY(-35px) scale(0.8); }
+  }
+
+  @keyframes experienceFloat {
+    0% { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.6); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(-12px) scale(1.2); }
+    25% { transform: translateX(-50%) translateY(-16px) scale(1); }
+    70% { transform: translateX(-50%) translateY(-22px) scale(1.05); opacity: 0.9; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-40px) scale(0.8); }
   }
 
   .entity-nameplate-health-bar {

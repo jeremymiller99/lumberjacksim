@@ -188,6 +188,8 @@ export default class GameRegion {
     // when they rejoin this or another rejoin before their connection times out.
     // If this causes issues in the future, we should move .remove to the actualy
     // Player closed connection event.
+    const gamePlayer = GamePlayer.getOrCreate(player);
+    gamePlayer.save(); // Final save before player leaves
     GamePlayer.remove(player);
 
     this._playerCount--;

@@ -41,15 +41,13 @@ export default class GameManager {
   private async loadLumberItems(): Promise<void> {
     const ItemRegistry = (await import('./items/ItemRegistry')).default;
     
-    // Only load the 5 essential items: 3 axes + wood + gold
-    const GoldItem = (await import('./items/general/GoldItem')).default;
+    // Only load the 4 essential items: 3 axes + wood
     const RawLogItem = (await import('./items/materials/RawLogItem')).default;
     const RustyAxeItem = (await import('./items/axes/RustyAxeItem')).default;
     const IronAxeItem = (await import('./items/axes/IronAxeItem')).default;
     const GoldAxeItem = (await import('./items/axes/GoldAxeItem')).default;
 
     const essentialItems = [
-      GoldItem,
       RawLogItem,
       RustyAxeItem,
       GoldAxeItem,
@@ -90,11 +88,11 @@ export default class GameManager {
     this._regions.set(snowForestRegion.id, snowForestRegion);
     GameClock.instance.addRegionClockCycle(snowForestRegion);
 
-    // Spawn portals in Hub to each region at specified coordinates
-    hubRegion.spawnPortalTo(oakForestRegion, { x: 13, y: 1, z: -5 });
-    hubRegion.spawnPortalTo(cursedForestRegion, { x: 15, y: 1, z: 17 });
-    hubRegion.spawnPortalTo(sandyForestRegion, { x: -8, y: 1, z: 18 });
-    hubRegion.spawnPortalTo(snowForestRegion, { x: -6, y: 1, z: -8 });
+    // Spawn portals in Hub to each region at specified coordinates with level requirements
+    hubRegion.spawnPortalTo(oakForestRegion, { x: 13, y: 1, z: -5 }, 0, 'normal', 'Oak Forest (Level 1+)', 1); // Level 1+ (0+ effectively)
+    hubRegion.spawnPortalTo(snowForestRegion, { x: -6, y: 1, z: -8 }, 0, 'normal', 'Snow Forest (Level 5+)', 5); // Level 5+
+    hubRegion.spawnPortalTo(sandyForestRegion, { x: -8, y: 1, z: 18 }, 0, 'normal', 'Sandy Forest (Level 10+)', 10); // Level 10+
+    hubRegion.spawnPortalTo(cursedForestRegion, { x: 15, y: 1, z: 17 }, 0, 'normal', 'Cursed Forest (Level 15+)', 15); // Level 15+
 
     this._startRegion = hubRegion;
 

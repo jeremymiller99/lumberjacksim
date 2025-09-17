@@ -23,6 +23,7 @@ export default abstract class OptimizedBaseQuest extends BaseQuest {
     transaction: {
       removeItems?: { itemClass: ItemClass; quantity: number }[];
       addItems?: { itemClass: ItemClass; quantity: number }[];
+      addCurrency?: number;
     },
     questId: string,
     objectiveId: string,
@@ -72,6 +73,11 @@ export default abstract class OptimizedBaseQuest extends BaseQuest {
                 break;
               }
             }
+          }
+          
+          // Handle currency addition if previous operations were successful
+          if (success && transaction.addCurrency) {
+            interactor.gamePlayer.adjustGold(transaction.addCurrency);
           }
           
           if (success) {
@@ -228,8 +234,9 @@ export default abstract class OptimizedBaseQuest extends BaseQuest {
    */
   protected static createReward(
     items?: { itemClass: ItemClass; quantity: number }[],
-    skillExperience?: { skillId: SkillId; amount: number }[]
+    skillExperience?: { skillId: SkillId; amount: number }[],
+    currency?: number
   ): QuestReward {
-    return { items, skillExperience };
+    return { items, skillExperience, currency };
   }
 }

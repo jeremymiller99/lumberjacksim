@@ -378,6 +378,13 @@ export default class GamePlayerEntity extends DefaultPlayerEntity implements IDa
       input.o = false;
     }
 
+    // Debug: Force UI sync (F5 key)
+    if (input.f5) {
+      this._gamePlayer.forceUISync();
+      this._gamePlayer.showNotification('UI refreshed!', 'success');
+      input.f5 = false;
+    }
+
     // Throttled UI sync of coordinates (top-center HUD)
     const nowMs = performance.now();
     if (nowMs - this._lastCoordsSyncTimeMs >= 200) {

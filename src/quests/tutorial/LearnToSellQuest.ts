@@ -7,7 +7,6 @@ import type { BaseChoppableTreeEntityPlayerEventPayloads } from '../../entities/
 
 import LumberMerchantEntity from '../../regions/oakForest/npcs/LumberMerchantEntity';
 import RawLogItem from '../../items/materials/RawLogItem';
-import GoldItem from '../../items/general/GoldItem';
 import UpgradeAxeQuest from './UpgradeAxeQuest';
 
 export default class LearnToSellQuest extends OptimizedBaseQuest {
@@ -16,8 +15,9 @@ export default class LearnToSellQuest extends OptimizedBaseQuest {
   static readonly description = `Now that you've chopped your first tree, it's time to turn that wood into gold! Sell your Raw Logs to Lumber Merchant Oakley.`;
 
   static readonly reward = OptimizedBaseQuest.createReward(
-    [{ itemClass: GoldItem, quantity: 25 }], // Bonus gold on top of the sale
-    [{ skillId: SkillId.LUMBER, amount: 75 }]
+    [], // No item rewards
+    [{ skillId: SkillId.LUMBER, amount: 75 }],
+    25 // Bonus currency on top of the sale
   );
 
   static readonly objectives = [
@@ -48,7 +48,7 @@ export default class LearnToSellQuest extends OptimizedBaseQuest {
       `Excellent! I can see you're getting the hang of the lumber trade. You've successfully sold your wood - that's the core of this business right there!`,
       {
         removeItems: [{ itemClass: RawLogItem, quantity: 3 }],
-        addItems: [{ itemClass: GoldItem, quantity: 15 }] // 3 logs * 5 gold each
+        addCurrency: 15 // 3 logs * 5 gold each
       },
       this.id,
       'sell-wood',

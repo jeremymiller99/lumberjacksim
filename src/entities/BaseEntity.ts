@@ -106,9 +106,9 @@ export default class BaseEntity extends Entity implements IInteractable, IDamage
   private _maxHealth: number;
   private _moveOptions: MoveOptions | undefined;
   private _moveSpeed: number; 
-  private _nameplateSceneUI: SceneUI;
-  private _nameplateType: BaseEntityNameplateType | undefined; 
-  private _nameplateViewDistance: number | undefined;
+  protected _nameplateSceneUI: SceneUI;
+  protected _nameplateType: BaseEntityNameplateType | undefined; 
+  protected _nameplateViewDistance: number | undefined;
   private _optionMap: Map<number, BaseEntityDialogueOption> = new Map();
   private _pathfindingOptions: PathfindingOptions | undefined;
   private _pushable: boolean;

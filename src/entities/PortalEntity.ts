@@ -7,11 +7,13 @@ import {
   ErrorHandler,
   ModelEntityOptions,
   RigidBodyType,
+  SceneUI,
   Vector3Like
 } from 'hytopia';
 
 import type GameRegion from '../GameRegion';
 import GamePlayerEntity from '../GamePlayerEntity';
+import Levels from '../systems/Levels';
 
 export type PortalEntityOptions = {
   delayS?: number;
@@ -19,6 +21,8 @@ export type PortalEntityOptions = {
   destinationRegionFacingAngle?: number;
   destinationRegionPosition: Vector3Like;
   type?: 'normal' | 'boss';
+  label?: string;
+  requiredLevel?: number;
 } & ModelEntityOptions;
 
 export default class PortalEntity extends Entity {
@@ -26,7 +30,10 @@ export default class PortalEntity extends Entity {
   public readonly destinationRegion: GameRegion;
   public readonly destinationRegionFacingAngle: number;
   public readonly destinationRegionPosition: Vector3Like;
+  public readonly requiredLevel: number;
   private readonly _playerTimeouts = new Map<GamePlayerEntity, NodeJS.Timeout>();
+  private _labelSceneUI: SceneUI | undefined;
+  private _baseLabel: string;
 
   public constructor(options: PortalEntityOptions) {
     const modelUri = options.modelUri ?? 'models/misc/selection-indicator.gltf';
@@ -79,10 +86,63 @@ export default class PortalEntity extends Entity {
     this.destinationRegion = options.destinationRegion;
     this.destinationRegionFacingAngle = options.destinationRegionFacingAngle ?? 0;
     this.destinationRegionPosition = options.destinationRegionPosition;
+    this.requiredLevel = options.requiredLevel ?? 1;
+    this._baseLabel = options.label || this.destinationRegion.name;
+
+    // Setup floating text label if provided
+    if (options.label) {
+      this._setupLabelUI(options.label);
+    }
+  }
+
+  public override spawn(...args: any[]): void {
+    super.spawn(...args);
+    
+    // Load the label UI after spawning
+    if (this._labelSceneUI && this.world) {
+      this._labelSceneUI.load(this.world);
+    }
+  }
+
+  private _setupLabelUI(text: string): void {
+    this._labelSceneUI = new SceneUI({
+      attachedToEntity: this,
+      offset: { x: 0, y: this.height / 2 + 1.5, z: 0 },
+      templateId: 'portal-text',
+      viewDistance: 15,
+      state: {
+        text: text,
+      },
+    });
+  }
+
+  public updateLabelForPlayer(player: GamePlayerEntity): void {
+    if (!this._labelSceneUI) return;
+    
+    const playerLevel = Levels.getLevelFromExperience(player.globalExperience);
+    let labelText = this._baseLabel;
+    
+    if (playerLevel < this.requiredLevel) {
+      labelText += ` [LOCKED - Need Level ${this.requiredLevel}]`;
+    } else {
+      labelText += ` [UNLOCKED]`;
+    }
+    
+    this._labelSceneUI.setState({
+      text: labelText,
+    });
   }
 
   private _teleportPlayer(player: GamePlayerEntity): void {
     if (player.isDead) {
+      return;
+    }
+
+    // Check level requirement
+    const playerLevel = Levels.getLevelFromExperience(player.globalExperience);
+    if (playerLevel < this.requiredLevel) {
+      player.showNotification(`You need to be level ${this.requiredLevel} to access ${this.destinationRegion.name}. You are currently level ${playerLevel}.`, 'error');
+      this._playerTimeouts.delete(player);
       return;
     }
 

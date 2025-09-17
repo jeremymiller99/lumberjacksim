@@ -1,10 +1,10 @@
 {
   "health": 110,
-  "currentRegionId": "oakForest",
+  "currentRegionId": "hub",
   "skillExperience": [
     [
       "lumber",
-      168
+      356
     ]
   ],
   "backpack": {
@@ -13,9 +13,17 @@
   "hotbar": {
     "items": [
       {
+        "position": 0,
+        "itemId": "iron_axe"
+      },
+      {
         "position": 1,
-        "itemId": "gold",
-        "quantity": 130
+        "itemId": "raw_log",
+        "quantity": 139
+      },
+      {
+        "position": 2,
+        "itemId": "rusty_axe"
       }
     ]
   },
@@ -43,7 +51,7 @@
         "state": "active",
         "objectiveProgress": {
           "earn-gold": 25,
-          "buy-wood-axe": 0,
+          "buy-wood-axe": 1,
           "test-new-axe": 0,
           "celebrate-success": 0
         }
@@ -55,5 +63,13 @@
   },
   "wearables": {
     "items": []
+  },
+  "currency": 10,
+  "hotbarSelectedIndex": 0,
+  "currentRegionSpawnFacingAngle": 0,
+  "currentRegionSpawnPoint": {
+    "x": 5,
+    "y": 2,
+    "z": 5
   }
 }

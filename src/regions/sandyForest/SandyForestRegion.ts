@@ -1,5 +1,10 @@
 import GameRegion from '../../GameRegion';
 import Spawner from '../../systems/Spawner';
+import PortalEntity from '../../entities/PortalEntity';
+import GameManager from '../../GameManager';
+
+// Merchant for the desert area
+import DesertMerchantEntity from './npcs/DesertMerchantEntity';
 
 import PalmTreeSmallEntity from '../../entities/forageables/PalmTreeSmallEntity';
 import PalmTreeMediumEntity from '../../entities/forageables/PalmTreeMediumEntity';
@@ -27,7 +32,16 @@ export default class SandyForestRegion extends GameRegion {
 
   protected override setup(): void {
     super.setup();
+    this._setupNPCs();
     this._setupLumberTrees();
+    this._setupPortals();
+  }
+
+  private _setupNPCs(): void {
+    // Desert merchant for survival gear and accessories
+    (new DesertMerchantEntity({ facingAngle: 180 })).spawn(this.world, { x: -3, y: 2, z: -5 });
+    
+    console.log('SandyForest: Spawned desert merchant at (-3, 2, -5)');
   }
 
   private _setupLumberTrees(): void {
@@ -46,12 +60,33 @@ export default class SandyForestRegion extends GameRegion {
           weight: 1,
         }
       ],
-      spawnIntervalMs: 8000,
+      spawnIntervalMs: 4000, // 4 seconds for faster tree regeneration
       world: this.world,
     });
 
     treeSpawner.start(true);
     console.log('SandyForest: Started palm tree spawning across 64x64 area');
+  }
+
+  private _setupPortals(): void {
+    // Get the hub region from GameManager
+    const hubRegion = GameManager.instance.getRegion('hub');
+    
+    if (hubRegion) {
+      const hubPortal = new PortalEntity({
+        destinationRegion: hubRegion,
+        destinationRegionPosition: { x: 5, y: 2, z: 5 }, // Hub spawn point
+        destinationRegionFacingAngle: 0,
+        label: 'Back to Hub',
+      });
+      
+      // Place the portal at a good location near the spawn area
+      hubPortal.spawn(this.world, { x: 5, y: 1, z: 0 });
+      
+      console.log('SandyForest: Spawned return portal to Hub at (5, 1, 0)');
+    } else {
+      console.warn('SandyForest: Could not find hub region for return portal');
+    }
   }
 }
 

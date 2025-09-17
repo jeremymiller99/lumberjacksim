@@ -4098,10 +4098,6 @@ window.ItemTooltips = (function() {
         updateMerchantSlot(data.position, data);
       }
     }
-    
-    if (data.type === 'syncCoordinates') {
-      updateCoordinates(data.x, data.y, data.z);
-    }
   });
 
   // Initialize merchant system
@@ -4575,15 +4571,6 @@ window.ItemTooltips = (function() {
       populateSlots(merchantState.hotbarItems, MERCHANT_CONFIG.hotbarSlots, updateHotbarSlot);
       hytopia.lockPointer(false, true);
     }
-  }
-
-  function updateCoordinates(x, y, z) {
-    const el = document.getElementById('hud-coordinates');
-    if (!el) return;
-    const rx = Math.round(x);
-    const ry = Math.round(y);
-    const rz = Math.round(z);
-    el.textContent = `X: ${rx} Y: ${ry} Z: ${rz}`;
   }
 
   // Initialize on load
@@ -7519,6 +7506,27 @@ window.ItemTooltips = (function() {
         }, 800 + delay);
       }
 
+      if (state.experienceGain) {
+        console.log(`Creating XP display: +${state.experienceGain} XP`);
+        const expEl = document.createElement('div');
+        expEl.className = 'entity-nameplate-experience';
+        expEl.textContent = `+${state.experienceGain} XP`;
+        
+        const delay = damageCount++ * 50;
+        
+        nameplate.appendChild(expEl);
+        
+        setTimeout(() => {
+          console.log('Starting XP animation');
+          expEl.classList.add('show');
+        }, delay);
+        setTimeout(() => {
+          expEl.remove();
+          damageCount--;
+          console.log('XP animation completed');
+        }, 1000 + delay);
+      }
+
       if (state.interactable) {
         interact.style.display = 'block';
       } else {
@@ -7565,7 +7573,9 @@ window.ItemTooltips = (function() {
     function showDamageNumber(amount, type) {
       const numberEl = document.createElement('div');
       numberEl.className = `entity-nameplate-${type}`;
-      numberEl.textContent = type === 'damage' ? `-${amount}` : `+${amount}`;
+      // Round the amount to avoid displaying long decimals
+      const roundedAmount = Math.round(amount);
+      numberEl.textContent = type === 'damage' ? `-${roundedAmount}` : `+${roundedAmount}`;
       
       const delay = damageCount++ * 50;
       
@@ -7708,6 +7718,20 @@ window.ItemTooltips = (function() {
     pointer-events: none;
   }
 
+  .entity-nameplate-experience {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffeb3b;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9), 1px 1px 0 #000, -1px -1px 0 #000, 0 0 12px rgba(255, 235, 59, 0.8);
+    opacity: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 100;
+  }
+
   .entity-nameplate-damage.show {
     animation: damageFloat 0.8s ease-out;
   }
@@ -7718,6 +7742,10 @@ window.ItemTooltips = (function() {
 
   .entity-nameplate-dodged.show {
     animation: dodgedFloat 0.8s ease-out;
+  }
+
+  .entity-nameplate-experience.show {
+    animation: experienceFloat 1.0s ease-out;
   }
 
   @keyframes damageFloat {
@@ -7741,6 +7769,14 @@ window.ItemTooltips = (function() {
     30% { transform: translateX(-50%) translateY(-14px) scale(1); }
     60% { transform: translateX(-50%) translateY(-18px) scale(1.05); }
     100% { opacity: 0; transform: translateX(-50%) translateY(-35px) scale(0.8); }
+  }
+
+  @keyframes experienceFloat {
+    0% { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.6); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(1.3); }
+    25% { transform: translateX(-50%) translateY(-28px) scale(1); }
+    70% { transform: translateX(-50%) translateY(-40px) scale(1.05); opacity: 0.9; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-60px) scale(0.8); }
   }
 
   .entity-nameplate-health-bar {
@@ -7929,6 +7965,52 @@ window.ItemTooltips = (function() {
   }
 </style>
 
+<!-- Portal Text Template -->
+<template id="portal-text-template">
+  <div class="portal-text">
+    <div class="portal-text-label">Back to Hub</div>
+  </div>
+</template>
+
+<script>
+  hytopia.registerSceneUITemplate('portal-text', (id, onState) => {
+    const template = document.getElementById('portal-text-template');
+    const clone = template.content.cloneNode(true);
+    const label = clone.querySelector('.portal-text-label');
+    
+    onState(state => {
+      if (state.text) {
+        label.textContent = state.text;
+      }
+    });
+    
+    return clone;
+  });
+</script>
+
+<style>
+  .portal-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .portal-text-label {
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+  }
+</style>
+
 <!-- Included from: ./hud.html -->
 <!-- Game HUD Overlay -->
 <div class="hud-overlay">
@@ -7971,6 +8053,14 @@ window.ItemTooltips = (function() {
        <div class="hud-clock-time">2:45 PM</div>
      </div>
    </div>
+
+  <!-- Currency Display (below clock) -->
+  <div class="hud-currency-container">
+    <div class="hud-currency">
+      <img src="{{CDN_ASSETS_URL}}/icons/items/gold.png" alt="Gold" class="hud-currency-icon">
+      <div class="hud-currency-amount" id="hud-currency-amount">0</div>
+    </div>
+  </div>
 
    <!-- Action Buttons (below clock) -->
    <div class="hud-action-buttons">
@@ -8127,6 +8217,9 @@ window.ItemTooltips = (function() {
         break;
       case 'syncExp':
         updateExperienceBar(data.level, data.exp, data.currentLevelExp, data.nextLevelExp);
+        break;
+      case 'updateCurrency':
+        updateCurrency(data.currency);
         break;
       case 'syncHealth':
         updateHealthBar(data.health, data.maxHealth);
@@ -8295,6 +8388,13 @@ window.ItemTooltips = (function() {
   }
 
   // Update Functions
+  function updateCurrency(currency) {
+    const currencyAmount = document.getElementById('hud-currency-amount');
+    if (currencyAmount) {
+      currencyAmount.textContent = currency.toLocaleString();
+    }
+  }
+
   function updateHealthBar(health, maxHealth) {
     const healthBar = document.querySelector('.hud-health-fill');
     const healthText = document.querySelector('.hud-health-text');
@@ -8534,7 +8634,7 @@ window.ItemTooltips = (function() {
   function showExpGainEffect(expGained) {
     const expGainEl = document.createElement('div');
     expGainEl.className = 'hud-exp-gain';
-    expGainEl.textContent = `+${formatExpNumber(expGained)} XP`;
+    expGainEl.textContent = `+${Math.round(expGained)} XP`;
     
     const delay = expGainCount++ * HUD_CONFIG.expGainStaggerDelay;
     
@@ -8700,6 +8800,16 @@ window.ItemTooltips = (function() {
   window.lumberjackSimulator.startTreeChopping = startTreeChopping;
   window.lumberjackSimulator.updateTreeChopping = updateTreeChopping;
   window.lumberjackSimulator.stopTreeChopping = stopTreeChopping;
+
+  // Coordinates update function
+  function updateCoordinates(x, y, z) {
+    const el = document.getElementById('hud-coordinates');
+    if (!el) return;
+    const rx = Math.round(x);
+    const ry = Math.round(y);
+    const rz = Math.round(z);
+    el.textContent = `X: ${rx} Y: ${ry} Z: ${rz}`;
+  }
 </script>
 
 <style>
@@ -9186,14 +9296,48 @@ window.ItemTooltips = (function() {
     font-variant-numeric: tabular-nums;
   }
 
+  .hud-currency-container {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    pointer-events: auto;
+  }
+
+  .hud-currency {
+    background: linear-gradient(145deg, var(--hud-primary), var(--hud-secondary));
+    border: 2px solid var(--hud-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), var(--hud-inset-shadow);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hud-currency-icon {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+  }
+
+  .hud-currency-amount {
+    font-size: var(--hud-clock-size);
+    font-weight: 600;
+    color: #ffd700;
+    text-shadow: var(--hud-text-shadow);
+    font-variant-numeric: tabular-nums;
+    min-width: 20px;
+  }
+
   /* ============================================
      ACTION BUTTONS
      ============================================ */
 
   .hud-action-buttons {
     position: absolute;
-    top: 80px;
+    top: 50%;
     right: 20px;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: var(--hud-actions-gap);
@@ -9420,13 +9564,15 @@ window.ItemTooltips = (function() {
   .hud-notification-container {
     position: absolute;
     top: 80px;
-    right: 90px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 12px;
     pointer-events: none;
     font-family: var(--hud-font);
     z-index: 100000;
+    align-items: center;
   }
 
   .hud-notification {
@@ -9443,7 +9589,7 @@ window.ItemTooltips = (function() {
       var(--hud-inset-shadow);
     
     opacity: 0;
-    transform: translateX(120%) scale(0.9);
+    transform: translateY(-20px) scale(0.9);
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: auto;
   }
@@ -9467,12 +9613,12 @@ window.ItemTooltips = (function() {
 
   .hud-notification.show {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 
   .hud-notification.hide {
     opacity: 0;
-    transform: translateX(120%) scale(0.9);
+    transform: translateY(-20px) scale(0.9);
     transition: all 0.4s ease-out;
   }
 
@@ -9850,6 +9996,22 @@ window.ItemTooltips = (function() {
     border-radius: 8px;
   }
 
+  body.mobile .hud-currency-container {
+    top: 60px;
+    right: 16px;
+  }
+
+  body.mobile .hud-currency {
+    padding: 6px 8px;
+    border-radius: 8px;
+    gap: 6px;
+  }
+
+  body.mobile .hud-currency-icon {
+    width: 14px;
+    height: 14px;
+  }
+
   body.mobile .hud-hotbar-slot {
     border-radius: 8px;
     border-width: 2px;
@@ -9887,8 +10049,9 @@ window.ItemTooltips = (function() {
   }
 
   body.mobile .hud-action-buttons {
-    top: 55px;
+    top: 50%;
     right: 16px;
+    transform: translateY(-50%);
     gap: 10px;
   }
 
@@ -9939,7 +10102,8 @@ window.ItemTooltips = (function() {
   /* Notification Mobile Adjustments */
   body.mobile .hud-notification-container {
     top: 55px;
-    right: 70px;
+    left: 50%;
+    transform: translateX(-50%);
     gap: 8px;
   }
 

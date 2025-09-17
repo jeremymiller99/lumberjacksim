@@ -80,6 +80,7 @@ export default class BaseMerchantEntity extends BaseEntity {
     }
 
     this._awardBarteringSkillExperience(interactor, totalGoldCost, true);
+    interactor.gamePlayer.save(); // Save after buying items
     interactor.showNotification(`Bought ${quantity} ${itemClass.name} for ${totalGoldCost.toLocaleString()} gold.`, 'success');
   }
 
@@ -139,6 +140,7 @@ export default class BaseMerchantEntity extends BaseEntity {
     }
 
     this._awardBarteringSkillExperience(interactor, totalGoldEarned, false);
+    interactor.gamePlayer.save(); // Save after selling items
     interactor.showNotification(`Sold ${quantity} ${item.name} for ${totalGoldEarned.toLocaleString()} gold.`, 'success');
   }
 

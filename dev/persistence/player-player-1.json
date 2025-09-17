@@ -1,6 +1,6 @@
 {
-  "health": 120,
-  "currentRegionId": "oakForest",
+  "health": 160,
+  "currentRegionId": "hub",
   "currentRegionSpawnFacingAngle": 0,
   "currentRegionSpawnPoint": {
     "x": 0,
@@ -14,7 +14,7 @@
     ],
     [
       "lumber",
-      293
+      2814
     ],
     [
       "bartering",
@@ -28,13 +28,20 @@
     "items": [
       {
         "position": 0,
-        "itemId": "gold",
-        "quantity": 200
+        "itemId": "rusty_axe"
+      },
+      {
+        "position": 2,
+        "itemId": "gold_axe"
+      },
+      {
+        "position": 1,
+        "itemId": "raw_log",
+        "quantity": 1847
       },
       {
         "position": 3,
-        "itemId": "raw_log",
-        "quantity": 110
+        "itemId": "gold_axe"
       }
     ]
   },
@@ -47,5 +54,6 @@
   "wearables": {
     "items": []
   },
-  "hotbarSelectedIndex": 0
+  "hotbarSelectedIndex": 0,
+  "currency": 4975
 }

@@ -486,7 +486,7 @@
   function showExpGainEffect(expGained) {
     const expGainEl = document.createElement('div');
     expGainEl.className = 'hud-exp-gain';
-    expGainEl.textContent = `+${formatExpNumber(expGained)} XP`;
+    expGainEl.textContent = `+${Math.round(expGained)} XP`;
     
     const delay = expGainCount++ * HUD_CONFIG.expGainStaggerDelay;
     

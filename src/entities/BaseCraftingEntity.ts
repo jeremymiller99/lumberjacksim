@@ -88,6 +88,7 @@ export default class BaseCraftingEntity extends BaseEntity {
 
     interactor.gamePlayer.addHeldItem(craftingRecipe.craftedItemClass);
     this._awardCraftingSkillExperience(interactor, craftingRecipe.craftedItemClass);
+    interactor.gamePlayer.save(); // Save after crafting
     interactor.showNotification(`You crafted a ${craftingRecipe.craftedItemClass.name}.`, 'success');
 
     interactor.gamePlayer.eventRouter.emit(BaseCraftingEntityPlayerEvent.CRAFT_ITEM, { crafter: this, craftingRecipeIndex });

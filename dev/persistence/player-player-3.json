@@ -1,6 +1,6 @@
 {
   "health": 120,
-  "currentRegionId": "oakForest",
+  "currentRegionId": "hub",
   "skillExperience": [
     [
       "lumber",
@@ -11,17 +11,7 @@
     "items": []
   },
   "hotbar": {
-    "items": [
-      {
-        "position": 0,
-        "itemId": "gold",
-        "quantity": 410
-      },
-      {
-        "position": 2,
-        "itemId": "wood_axe"
-      }
-    ]
+    "items": []
   },
   "questLog": {
     "quests": [
@@ -55,6 +45,11 @@
     ]
   },
   "storage": {
+    "items": []
+  },
+  "currency": 0,
+  "hotbarSelectedIndex": 0,
+  "wearables": {
     "items": []
   }
 }

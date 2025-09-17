@@ -45,7 +45,7 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
       itemDrops,
       forageDurationMs,
       maxDropsPerForage: maturity === 'ancient' ? 4 : maturity === 'mature' ? 3 : 2,
-      experienceReward: maturity === 'ancient' ? 15 : maturity === 'mature' ? 10 : 5,
+      experienceReward: ChoppableTreeEntity._calculateExperienceReward(treeType, maturity),
     });
 
     this._treeType = treeType;
@@ -81,7 +81,7 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
   }
 
   public override interact(interactor: GamePlayerEntity): void {
-    if (this.isBeingForaged) return;
+    if (this.isBeingForaged || this.isFalling) return;
 
     // Prevent interaction during bee encounter setup
     if (this._beeEncounterInProgress) {
@@ -116,8 +116,8 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
       }
     }
     
-    // Check for bee encounter (1/3 chance) only if bees aren't already active
-    const hasBeehive = !this._hasActiveBees && Math.random() < 0.33;
+    // Check for bee encounter (1/5 chance) only if bees aren't already active and this is an oak tree
+    const hasBeehive = !this._hasActiveBees && this._treeType === 'oak' && Math.random() < 0.2;
     
     if (hasBeehive) {
       this._triggerBeeEncounter(interactor);
@@ -134,7 +134,7 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
     this._beeEncounterInProgress = true;
     
     // Show notification about bees
-    interactor.showNotification('🐝 Angry bees emerge from the tree! You must calm them first!', 'warning');
+    interactor.showNotification('🐝 Angry bees emerge from the oak tree! You must calm them first!', 'warning');
     
     // Spawn bees around the tree
     this._spawnBees();
@@ -323,6 +323,32 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
       case 'ancient': return 6000; // 6 seconds
       default: return 4000;
     }
+  }
+
+  private static _calculateExperienceReward(treeType: string, maturity: string): number {
+    // Base XP values for Oak trees (starter area)
+    const baseXP = {
+      young: 5,
+      mature: 10, 
+      ancient: 15
+    };
+
+    // World difficulty multipliers based on tree type
+    const worldMultipliers = {
+      oak: 1.0,    // Level 1+ - Oak Forest (starter)
+      snow: 1.5,   // Level 5+ - Snow Forest  
+      palm: 2.0,   // Level 10+ - Sandy Forest
+      burnt: 2.5   // Level 15+ - Cursed Forest (hardest)
+    };
+
+    // Get base XP for maturity level
+    const base = baseXP[maturity as keyof typeof baseXP] || baseXP.mature;
+    
+    // Get world multiplier for tree type
+    const multiplier = worldMultipliers[treeType as keyof typeof worldMultipliers] || 1.0;
+    
+    // Calculate final XP (rounded to whole number)
+    return Math.round(base * multiplier);
   }
 
   private _applyYieldBonus(yieldBonus: number): void {

@@ -202,6 +202,8 @@ export abstract class BaseMinigame {
       }
     }
     
+    // Save is already called in addHeldItem, but ensure we save minigame completion
+    this._player.gamePlayer.save();
     this._player.showNotification(`Minigame completed! Received rewards.`, 'success');
   }
   

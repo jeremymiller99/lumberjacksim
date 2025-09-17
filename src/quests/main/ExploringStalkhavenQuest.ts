@@ -10,7 +10,6 @@ import TestedMettleQuest from './TestedMettleQuest';
 
 import DullSwordItem from '../../items/axes/DullSwordItem';
 import AdventurerTunicItem from '../../items/wearables/LeatherTunicItem';
-import GoldItem from '../../items/general/GoldItem';
 
 export default class ExploringStalkhavenQuest extends BaseQuest {
   static readonly id = 'exploring-stalkhaven';
@@ -21,8 +20,8 @@ export default class ExploringStalkhavenQuest extends BaseQuest {
     items: [
       { itemClass: AdventurerTunicItem, quantity: 1 },
       { itemClass: DullSwordItem, quantity: 1 },
-      { itemClass: GoldItem, quantity: 75 },
     ],
+    currency: 75,
     skillExperience: [
       { skillId: SkillId.LUMBER, amount: 125 },
     ],

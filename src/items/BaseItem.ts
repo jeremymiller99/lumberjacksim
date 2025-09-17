@@ -151,6 +151,7 @@ export default abstract class BaseItem implements IInteractable {
         this.despawnEntity();
       }
 
+      playerEntity.gamePlayer.save(); // Save after picking up item
       playerEntity.gamePlayer.eventRouter.emit(BaseItemPlayerEvent.PICKED_UP, { item: this });
     }
   }

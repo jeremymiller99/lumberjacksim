@@ -10,6 +10,7 @@ export type QuestState = 'active' | 'completed';
 export type QuestReward = {
   items?: { itemClass: ItemClass; quantity: number }[];
   skillExperience?: { skillId: SkillId; amount: number }[];
+  currency?: number;
 }
 
 export type QuestObjective = {
@@ -75,6 +76,10 @@ export default abstract class BaseQuest {
       for (const expReward of this.reward.skillExperience) {
         gamePlayer.adjustSkillExperience(expReward.skillId, expReward.amount);
       }
+    }
+
+    if (this.reward.currency) {
+      gamePlayer.adjustGold(this.reward.currency);
     }
 
     return true;

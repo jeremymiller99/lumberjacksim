@@ -1,6 +1,6 @@
 {
   "health": 120,
-  "currentRegionId": "forest1",
+  "currentRegionId": "hub",
   "skillExperience": [
     [
       "lumber",
@@ -8,13 +8,7 @@
     ]
   ],
   "backpack": {
-    "items": [
-      {
-        "position": 0,
-        "itemId": "gold",
-        "quantity": 130
-      }
-    ]
+    "items": []
   },
   "hotbar": {
     "items": [
@@ -62,11 +56,8 @@
     "items": []
   },
   "wearables": {
-    "items": [
-      {
-        "position": 0,
-        "itemId": "straw_hat"
-      }
-    ]
-  }
+    "items": []
+  },
+  "currency": 0,
+  "hotbarSelectedIndex": 2
 }

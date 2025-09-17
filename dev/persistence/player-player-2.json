@@ -4,24 +4,18 @@
   "skillExperience": [
     [
       "lumber",
-      166
+      295
     ]
   ],
   "backpack": {
-    "items": [
-      {
-        "position": 0,
-        "itemId": "gold",
-        "quantity": 70
-      }
-    ]
+    "items": []
   },
   "hotbar": {
     "items": [
       {
-        "position": 1,
+        "position": 0,
         "itemId": "raw_log",
-        "quantity": 135
+        "quantity": 46
       }
     ]
   },
@@ -39,5 +33,7 @@
   },
   "wearables": {
     "items": []
-  }
+  },
+  "hotbarSelectedIndex": 0,
+  "currency": 800
 }

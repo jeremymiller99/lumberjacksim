@@ -1,6 +1,7 @@
 import GameRegion from '../../GameRegion';
 import Spawner from '../../systems/Spawner';
-// import PortalEntity from '../../entities/PortalEntity'; // Not needed for lumber test
+import PortalEntity from '../../entities/PortalEntity';
+import GameManager from '../../GameManager';
 
 // Merchant for the forest area
 import LumberMerchantEntity from './npcs/LumberMerchantEntity';
@@ -35,7 +36,7 @@ export default class OakForestRegion extends GameRegion {
 
     this._setupNPCs();
     this._setupLumberTrees();
-    // this._setupPortals(); // Disabled for lumber testing
+    this._setupPortals();
   }
 
   private _setupNPCs(): void {
@@ -45,17 +46,26 @@ export default class OakForestRegion extends GameRegion {
     console.log('OakForest: Spawned merchant at (0, 2, -5)');
   }
 
-  // Portal setup disabled for lumber testing
-  // private _setupPortals(): void {
-  //   const stalkhavenPortal = new PortalEntity({
-  //     destinationRegionId: 'stalkhaven',
-  //     destinationRegionPosition: { x: 32, y: 2, z: 1 },
-  //     destinationRegionFacingAngle: 90,
-  //     modelScale: 2,
-  //   });
-  //   
-  //   stalkhavenPortal.spawn(this.world, { x: -6, y: 9.5, z: -31 });
-  // }
+  private _setupPortals(): void {
+    // Get the hub region from GameManager
+    const hubRegion = GameManager.instance.getRegion('hub');
+    
+    if (hubRegion) {
+      const hubPortal = new PortalEntity({
+        destinationRegion: hubRegion,
+        destinationRegionPosition: { x: 5, y: 2, z: 5 }, // Hub spawn point
+        destinationRegionFacingAngle: 0,
+        label: 'Back to Hub',
+      });
+      
+      // Place the portal at a good location near the spawn area
+      hubPortal.spawn(this.world, { x: 5, y: 1, z: 0 });
+      
+        console.log('OakForest: Spawned return portal to Hub at (5, 1, 0)');
+    } else {
+      console.warn('OakForest: Could not find hub region for return portal');
+    }
+  }
 
   private _setupLumberTrees(): void {
     const treeSpawner = new Spawner({
@@ -73,7 +83,7 @@ export default class OakForestRegion extends GameRegion {
           weight: 1,
         }
       ],
-      spawnIntervalMs: 8000, // 8 seconds respawn for testing
+      spawnIntervalMs: 4000, // 4 seconds respawn for faster tree regeneration
       world: this.world,
     });
 

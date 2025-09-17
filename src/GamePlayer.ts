@@ -8,7 +8,6 @@ import type { EventPayloads, Vector3Like } from 'hytopia';
 import { SkillId, skills } from './config';
 import Backpack from './systems/Backpack';
 import GameManager from './GameManager';
-import GoldItem from './items/general/GoldItem';
 import Hotbar from './systems/Hotbar';
 import Levels from './systems/Levels';
 import QuestLog from './systems/QuestLog';
@@ -38,6 +37,7 @@ export type NotificationType = 'success' | 'error' | 'warning' | 'complete' | 'n
 
 type SerializedGamePlayerData = {
   health: number;
+  currency?: number; // Optional for backward compatibility
   currentRegionId: string | undefined;
   currentRegionSpawnFacingAngle: number | undefined;
   currentRegionSpawnPoint: Vector3Like | undefined;
@@ -71,6 +71,7 @@ export default class GamePlayer {
   private _entityAlertClassNames: Set<string> = new Set();
   private _globalExperience: number = 0;
   private _health: number = 100;
+  private _currency: number = 0;
   private _isDead: boolean = false;
   private _saveTimeout: NodeJS.Timeout | undefined;
   private _skillExperience: Map<SkillId, number> = new Map();
@@ -157,6 +158,15 @@ export default class GamePlayer {
     return this._health;
   }
 
+  public get currency(): number {
+    return this._currency;
+  }
+
+  public getGoldAmount(): number {
+    // For backward compatibility with merchant logic
+    return this._currency;
+  }
+
   public get isDead(): boolean {
     return this._isDead;
   }
@@ -186,7 +196,38 @@ export default class GamePlayer {
   }
 
   public addHeldItem(itemClass: typeof BaseItem, quantity: number = 1): boolean {
-    return this.hotbar.addItem(itemClass.create({ quantity })) || this.backpack.addItem(itemClass.create({ quantity }));
+    const success = this.hotbar.addItem(itemClass.create({ quantity })) || this.backpack.addItem(itemClass.create({ quantity }));
+    if (success) this.save(); // Save after adding item
+    return success;
+  }
+
+  public removeHeldItem(itemClass: typeof BaseItem, quantity: number = 1): boolean {
+    // Get all items of the specified class from both hotbar and backpack
+    const hotbarItems = this.hotbar.getItemsByClass(itemClass);
+    const backpackItems = this.backpack.getItemsByClass(itemClass);
+    
+    let remainingToRemove = quantity;
+    
+    // Remove from hotbar first
+    for (const item of hotbarItems) {
+      if (remainingToRemove <= 0) break;
+      
+      const removeFromThis = Math.min(item.quantity, remainingToRemove);
+      this.adjustInventoryItemQuantityByReference(this.hotbar, item, -removeFromThis);
+      remainingToRemove -= removeFromThis;
+    }
+    
+    // Remove from backpack if needed
+    for (const item of backpackItems) {
+      if (remainingToRemove <= 0) break;
+      
+      const removeFromThis = Math.min(item.quantity, remainingToRemove);
+      this.adjustInventoryItemQuantityByReference(this.backpack, item, -removeFromThis);
+      remainingToRemove -= removeFromThis;
+    }
+    
+    // Return true if we removed the requested quantity
+    return remainingToRemove === 0;
   }
 
   // Game state methods
@@ -204,6 +245,9 @@ export default class GamePlayer {
     if (willDie) {
       this.eventRouter.emit(GamePlayerPlayerEvent.DIED, null);
     }
+    
+    // Save health changes
+    this.save();
   }
 
   public adjustInventoryItemQuantityByReference(itemInventory: Backpack | Hotbar | Storage, item: BaseItem, amount: number): boolean {
@@ -213,9 +257,11 @@ export default class GamePlayer {
     
     if (newQuantity <= 0) {
       itemInventory.removeItemByReference(item);
+      this.save(); // Save after removing item
       return true;
     } else {
       itemInventory.adjustItemQuantityByReference(item, amount);
+      this.save(); // Save after adjusting quantity
       return true;
     }
   }
@@ -245,56 +291,16 @@ export default class GamePlayer {
   public adjustGold(amount: number, allowNegative: boolean = false): boolean {
     if (amount === 0) return true;
 
-    if (amount > 0) {
-      // Adding gold - stack with existing or create new
-      const existingGold = this.hotbar.getItemByClass(GoldItem) ?? this.backpack.getItemByClass(GoldItem);
-      if (existingGold) {
-        const inventory = this.hotbar.getItemByClass(GoldItem) === existingGold ? this.hotbar : this.backpack;
-        return this.adjustInventoryItemQuantityByReference(inventory, existingGold, amount);
-      } else {
-        const goldItem = GoldItem.create({ quantity: amount });
-        return this.hotbar.addItem(goldItem) || this.backpack.addItem(goldItem);
-      }
-    } else {
-      // Subtracting gold - handle multiple stacks across inventories
-      const hotbarGolds = this.hotbar.getItemsByClass(GoldItem);
-      const backpackGolds = this.backpack.getItemsByClass(GoldItem);
-      let totalGold = 0;
-      
-      // Calculate total gold without creating new arrays
-      for (const gold of hotbarGolds) {
-        totalGold += gold.quantity;
-      }
-      for (const gold of backpackGolds) {
-        totalGold += gold.quantity;
-      }
-      
-      let remainingToRemove = Math.abs(amount);
-      
-      if (totalGold < remainingToRemove && !allowNegative) {
-        return false;
-      }
-
-      // Process hotbar gold first
-      for (const gold of hotbarGolds) {
-        if (remainingToRemove <= 0) break;
-        
-        const removeFromThis = Math.min(gold.quantity, remainingToRemove);
-        this.adjustInventoryItemQuantityByReference(this.hotbar, gold, -removeFromThis);
-        remainingToRemove -= removeFromThis;
-      }
-      
-      // Process backpack gold if needed
-      for (const gold of backpackGolds) {
-        if (remainingToRemove <= 0) break;
-        
-        const removeFromThis = Math.min(gold.quantity, remainingToRemove);
-        this.adjustInventoryItemQuantityByReference(this.backpack, gold, -removeFromThis);
-        remainingToRemove -= removeFromThis;
-      }
-      
-      return true;
+    const newCurrency = this._currency + amount;
+    
+    if (newCurrency < 0 && !allowNegative) {
+      return false;
     }
+    
+    this._currency = Math.max(0, newCurrency);
+    this._updateCurrencyUI();
+    this.save();
+    return true;
   }
 
   public adjustSkillExperience(skillId: SkillId, amount: number): void {
@@ -318,6 +324,7 @@ export default class GamePlayer {
       this.showNotification(`Level up! You are now level ${newMainLevel}!`, 'success');
       this._updateHudHealthUI();
       this._updateEntityHealthSceneUI();
+      this._updatePortalLabels();
 
       this.save();
     }
@@ -328,6 +335,7 @@ export default class GamePlayer {
     }
     
     this._updateExperienceUI();
+    this.save(); // Save experience changes
   }
 
   public despawnFromRegion(): void {
@@ -348,6 +356,11 @@ export default class GamePlayer {
     this.setCurrentRegionSpawnPoint(spawnPoint);              
     this.save();
     this.player.joinWorld(region.world);
+    
+    // Update portal labels when entering a region
+    setTimeout(() => {
+      this._updatePortalLabels();
+    }, 1000); // Delay to ensure entities are loaded
   }
 
   public load(): void {
@@ -369,6 +382,11 @@ export default class GamePlayer {
 
   public onPlayerReconnected(): void {
     this._loadUI();
+  }
+
+  public forceUISync(): void {
+    // Force immediate UI synchronization - useful for debugging
+    this._syncAllUIState();
   }
 
   public removeEntityAlert(entityClass: typeof BaseEntity): void {
@@ -475,6 +493,7 @@ export default class GamePlayer {
       this._currentRegionSpawnPoint = playerData.currentRegionSpawnPoint;
       this._globalExperience = playerData.skillExperience.reduce((acc, [, experience]) => acc + experience, 0);
       this._health = playerData.health;
+      this._currency = playerData.currency ?? 0; // Default to 0 for backward compatibility
       this._isDead = this._health <= 0;
       
       // Restore current region if available
@@ -506,6 +525,9 @@ export default class GamePlayer {
       
       // Restore quest log
       const questLogSuccess = this.questLog.loadFromSerializedData(playerData.questLog);
+
+      // Migrate existing gold items to currency (for backward compatibility)
+      this._migrateGoldItemsToCurrency();
 
       return backpackSuccess && hotbarSuccess && storageSuccess && wearablesSuccess && questLogSuccess;
     } catch (error) {
@@ -560,6 +582,7 @@ export default class GamePlayer {
 
       if (droppedItem && this._currentEntity?.world) {
         droppedItem.spawnEntityAsEjectedDrop(this._currentEntity.world, this._currentEntity.position, this._currentEntity.directionFromRotation);
+        this.save(); // Save after dropping item
       }
     }
 
@@ -604,6 +627,9 @@ export default class GamePlayer {
       if (fromType === 'wearables' && toType === 'wearables') {
         this.wearables.moveItem(fromIndex, toIndex);
       }
+      
+      // Save after any item movement
+      this.save();
     }
 
     if (data.type === 'progressDialogue') {
@@ -634,6 +660,7 @@ export default class GamePlayer {
 
     if (data.type === 'setSelectedHotbarIndex') {
       this.hotbar.setSelectedIndex(data.index);
+      this.save(); // Save hotbar selection changes
     }
     
     if (data.type === 'minigameInput') {
@@ -648,8 +675,22 @@ export default class GamePlayer {
     // Complete UI reload for region changes (client disconnect/reconnect)
     this.player.ui.load('ui/index.html');
 
+    // Setup UI event listener (remove existing to prevent duplicates)
+    this.player.ui.off(PlayerUIEvent.DATA, this._onPlayerUIData);
+    this.player.ui.on(PlayerUIEvent.DATA, this._onPlayerUIData);
+
+    // Delay UI state sync to ensure UI is fully loaded
+    setTimeout(() => {
+      this._syncAllUIState();
+    }, 250); // Increased delay for dev environment
+  }
+
+  private _syncAllUIState(): void {
+    console.log(`Syncing UI state - Currency: ${this._currency}, Health: ${this._health}`);
+    
     // Sync all UI state
     this._updateExperienceUI();
+    this._updateCurrencyUI();
     this._updateHudHealthUI();
     this._updateSkillsMenuUI();
     this._updateEntityAlertsSceneUIs();
@@ -657,10 +698,8 @@ export default class GamePlayer {
     this.hotbar.syncUI(this.player);
     this.wearables.syncUI(this.player);
     this.questLog.syncUI();
-
-    // Setup UI event listener (remove existing to prevent duplicates)
-    this.player.ui.off(PlayerUIEvent.DATA, this._onPlayerUIData);
-    this.player.ui.on(PlayerUIEvent.DATA, this._onPlayerUIData);
+    
+    console.log('UI state sync completed');
   }
 
   private _moveInventoryItem(source: ItemInventory, dest: ItemInventory, fromIndex: number, toIndex: number): void {
@@ -673,6 +712,7 @@ export default class GamePlayer {
   private _serialize(): SerializedGamePlayerData {    
     const playerData = {
       health: this._health,
+      currency: this._currency,
       currentRegionId: this._currentRegion?.id,
       currentRegionSpawnFacingAngle: this._currentRegionSpawnFacingAngle,
       currentRegionSpawnPoint: this._currentRegionSpawnPoint,
@@ -688,11 +728,74 @@ export default class GamePlayer {
     return playerData;
   }
 
+  private _migrateGoldItemsToCurrency(): void {
+    // Find all gold items in inventories by ID and convert them to currency
+    const hotbarGolds = this.hotbar.items.filter(item => item?.id === 'gold');
+    const backpackGolds = this.backpack.items.filter(item => item?.id === 'gold');
+    const storageGolds = this.storage.items.filter(item => item?.id === 'gold');
+    
+    let totalGold = 0;
+    
+    // Calculate total gold from all inventories
+    for (const gold of hotbarGolds) {
+      if (gold) totalGold += gold.quantity;
+    }
+    for (const gold of backpackGolds) {
+      if (gold) totalGold += gold.quantity;
+    }
+    for (const gold of storageGolds) {
+      if (gold) totalGold += gold.quantity;
+    }
+    
+    if (totalGold > 0) {
+      // Add gold to currency
+      this._currency += totalGold;
+      
+      // Remove all gold items from inventories
+      for (const gold of hotbarGolds) {
+        if (gold) this.hotbar.removeItemByReference(gold);
+      }
+      for (const gold of backpackGolds) {
+        if (gold) this.backpack.removeItemByReference(gold);
+      }
+      for (const gold of storageGolds) {
+        if (gold) this.storage.removeItemByReference(gold);
+      }
+      
+      this.showNotification(`Migrated ${totalGold} gold items to currency!`, 'success');
+      console.log(`Migrated ${totalGold} gold items to currency`);
+    }
+    
+    // Always log current currency for debugging
+    console.log(`Player currency after migration: ${this._currency}`);
+  }
+
   private _updateEntityAlertsSceneUIs(): void {
     this.player.ui.sendData({
       type: 'syncEntityAlerts',
       classNames: Array.from(this._entityAlertClassNames),
     });
+  }
+
+  private _updatePortalLabels(): void {
+    // Update portal labels in the current region when player levels up
+    if (!this._currentRegion || !this._currentEntity || !this._currentRegion.world) return;
+    
+    // Check if world.entities exists and is an array
+    if (!this._currentRegion.world.entities || !Array.isArray(this._currentRegion.world.entities)) {
+      console.log('World entities not available yet, skipping portal label update');
+      return;
+    }
+    
+    // Find all portals in the current region and update their labels
+    const portals = this._currentRegion.world.entities.filter(entity => entity && entity.constructor.name === 'PortalEntity');
+    console.log(`Found ${portals.length} portals to update`);
+    
+    for (const portal of portals) {
+      if (typeof (portal as any).updateLabelForPlayer === 'function') {
+        (portal as any).updateLabelForPlayer(this._currentEntity);
+      }
+    }
   }
 
   private _updateEntityHealthSceneUI(): void {
@@ -702,6 +805,14 @@ export default class GamePlayer {
       dodged: false,
       health: this.health,
       maxHealth: this.maxHealth,
+    });
+  }
+
+  private _updateCurrencyUI(): void {
+    console.log(`Updating currency UI: ${this._currency}`);
+    this.player.ui.sendData({
+      type: 'updateCurrency',
+      currency: this._currency,
     });
   }
 
@@ -752,6 +863,9 @@ export default class GamePlayer {
   }
 
   private _setupNewPlayer(): void {
+    // Give new players starting currency
+    this._currency = 0; // Start with 0 gold
+    
     // Auto-start the first tutorial quest for new players
     import('./quests/tutorial/FirstChopQuest').then(({ default: FirstChopQuest }) => {
       this.questLog.startQuest(FirstChopQuest);
