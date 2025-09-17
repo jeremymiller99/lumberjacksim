@@ -749,7 +749,6 @@ window.ItemTooltips = (function() {
     </div>
   </div>
 </div>
-
 <script>
   // Configuration
   const BACKPACK_CONFIG = {
@@ -1189,7 +1188,6 @@ window.ItemTooltips = (function() {
   // Setup global functions
   window.lumberjackSimulator.openBackpack = openBackpack;
 </script>
-
 <style>
   :root {
     --backpack-slot-size: 56px;
@@ -1972,7 +1970,6 @@ window.ItemTooltips = (function() {
   setupEventListeners();
   window.lumberjackSimulator.openSkills = openSkills;
 </script>
-
 <style>
   :root {
     --skills-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -2560,7 +2557,6 @@ window.ItemTooltips = (function() {
   // Setup close button
   document.querySelector('.dialogue-close').addEventListener('click', closeDialogue);
 </script>
-
 <style>
   :root {
     --dialogue-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -3345,7 +3341,6 @@ window.ItemTooltips = (function() {
   window.lumberjackSimulator.openQuests = openQuests;
   
 </script>
-
 <style>
   :root {
     --quests-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -4065,7 +4060,6 @@ window.ItemTooltips = (function() {
     </div>
   </div>
 </div>
-
 <script>
   // Configuration
   const MERCHANT_CONFIG = {
@@ -4103,6 +4097,10 @@ window.ItemTooltips = (function() {
       if (merchantState.currentMode === 'sell') {
         updateMerchantSlot(data.position, data);
       }
+    }
+    
+    if (data.type === 'syncCoordinates') {
+      updateCoordinates(data.x, data.y, data.z);
     }
   });
 
@@ -4579,10 +4577,18 @@ window.ItemTooltips = (function() {
     }
   }
 
+  function updateCoordinates(x, y, z) {
+    const el = document.getElementById('hud-coordinates');
+    if (!el) return;
+    const rx = Math.round(x);
+    const ry = Math.round(y);
+    const rz = Math.round(z);
+    el.textContent = `X: ${rx} Y: ${ry} Z: ${rz}`;
+  }
+
   // Initialize on load
   initializeMerchant();
 </script>
-
 <style>
   :root {
     --merchant-slot-size: 56px;
@@ -5300,7 +5306,6 @@ window.ItemTooltips = (function() {
     </div>
   </div>
 </div>
-
 <script>
   // Configuration
   const CRAFTING_CONFIG = {
@@ -5751,7 +5756,6 @@ window.ItemTooltips = (function() {
   // Initialize on load
   initializeCrafting();
 </script>
-
 <style>
   :root {
     --crafting-slot-size: 56px;
@@ -7119,7 +7123,6 @@ window.ItemTooltips = (function() {
     </div>
   </div>
 </div>
-
 <script>
   // Data Handlers
   hytopia.onData(data => {
@@ -7810,7 +7813,6 @@ window.ItemTooltips = (function() {
     return clone;
   });
 </script>
-
 <style>
   :root {
     --nameplate-bg: linear-gradient(145deg, #2a2a2a, #1e1e1e);
@@ -7930,166 +7932,167 @@ window.ItemTooltips = (function() {
 <!-- Included from: ./hud.html -->
 <!-- Game HUD Overlay -->
 <div class="hud-overlay">
-  <!-- Area Banner -->
-  <div class="hud-area-banner" id="hud-area-banner">
-    <div class="hud-area-banner-content">
-      <div class="hud-area-banner-text"></div>
-      <div class="hud-area-banner-underline"></div>
-    </div>
-  </div>
+  <div class="hud-coordinates" id="hud-coordinates" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.35); color: var(--hud-text); padding: 4px 8px; border-radius: 6px; font-size: 12px; letter-spacing: 0.5px; text-shadow: var(--hud-text-shadow); pointer-events: none; z-index: 1000;">X: 0 Y: 0 Z: 0</div>
+   <!-- Area Banner -->
+   <div class="hud-area-banner" id="hud-area-banner">
+     <div class="hud-area-banner-content">
+       <div class="hud-area-banner-text"></div>
+       <div class="hud-area-banner-underline"></div>
+     </div>
+   </div>
 
-  <!-- Death Overlay -->
-  <div class="hud-death-overlay" id="hud-death-overlay">
-    <div class="hud-death-content">
-      <div class="hud-death-title">You Died!</div>
-      <div class="hud-death-subtitle">Await revival or respawn nearby</div>
-      <div class="hud-death-underline"></div>
-      <button class="hud-death-respawn-btn" id="hud-death-respawn-btn">
-        <span class="hud-death-respawn-text">Respawn</span>
-      </button>
-    </div>
-  </div>
+   <!-- Death Overlay -->
+   <div class="hud-death-overlay" id="hud-death-overlay">
+     <div class="hud-death-content">
+       <div class="hud-death-title">You Died!</div>
+       <div class="hud-death-subtitle">Await revival or respawn nearby</div>
+       <div class="hud-death-underline"></div>
+       <button class="hud-death-respawn-btn" id="hud-death-respawn-btn">
+         <span class="hud-death-respawn-text">Respawn</span>
+       </button>
+     </div>
+   </div>
 
-  <!-- Tree Chopping Progress Bar -->
-  <div class="hud-chopping-container" id="hud-chopping-container">
-    <div class="hud-chopping-bar">
-      <div class="hud-chopping-fill" id="hud-chopping-fill" style="width: 0%;"></div>
-      <div class="hud-chopping-text" id="hud-chopping-text">Chopping Tree...</div>
-    </div>
-    <div class="hud-chopping-timer" id="hud-chopping-timer">3.2s</div>
-  </div>
+   <!-- Tree Chopping Progress Bar -->
+   <div class="hud-chopping-container" id="hud-chopping-container">
+     <div class="hud-chopping-bar">
+       <div class="hud-chopping-fill" id="hud-chopping-fill" style="width: 0%;"></div>
+       <div class="hud-chopping-text" id="hud-chopping-text">Chopping Tree...</div>
+     </div>
+     <div class="hud-chopping-timer" id="hud-chopping-timer">3.2s</div>
+   </div>
 
-  <!-- Respawn Fade Overlay -->
-  <div class="hud-respawn-fade" id="hud-respawn-fade"></div>
+   <!-- Respawn Fade Overlay -->
+   <div class="hud-respawn-fade" id="hud-respawn-fade"></div>
 
-  <!-- Game Clock (top right) -->
-  <div class="hud-clock-container">
-    <div class="hud-clock">
-      <div class="hud-clock-time">2:45 PM</div>
-    </div>
-  </div>
+   <!-- Game Clock (top right) -->
+   <div class="hud-clock-container">
+     <div class="hud-clock">
+       <div class="hud-clock-time">2:45 PM</div>
+     </div>
+   </div>
 
-  <!-- Action Buttons (below clock) -->
-  <div class="hud-action-buttons">
-    <button class="hud-action-button" id="hud-quest-log-btn">
-      <img src="{{CDN_ASSETS_URL}}/icons/buttons/quests.png" alt="Quests" class="hud-action-button-icon">
-      <div class="hud-action-key-indicator">J</div>
-      <div class="hud-quest-count-indicator" id="hud-quest-count-indicator">0</div>
-      <div class="hud-action-tooltip">
-        <div class="hud-action-tooltip-content">
-          Quests - View your active and completed quests.
-        </div>
-      </div>
-    </button>
-    <button class="hud-action-button" id="hud-backpack-btn">
-      <img src="{{CDN_ASSETS_URL}}/icons/buttons/backpack.png" alt="Backpack" class="hud-action-button-icon">
-      <div class="hud-action-key-indicator">I</div>
-      <div class="hud-action-tooltip">
-        <div class="hud-action-tooltip-content">
-          Backpack - View and manage your backpack and equipment.
-        </div>
-      </div>
-    </button>
-    <button class="hud-action-button" id="hud-skills-btn">
-      <img src="{{CDN_ASSETS_URL}}/icons/buttons/skills.png" alt="Skills" class="hud-action-button-icon">
-      <div class="hud-action-key-indicator">M</div>
-      <div class="hud-action-tooltip">
-        <div class="hud-action-tooltip-content">
-          Skills - View your current character skills.
-        </div>
-      </div>
-    </button>
-    <button class="hud-action-button hud-help-button" id="hud-help-btn">
-      <div class="hud-help-icon">?</div>
-      <div class="hud-action-key-indicator">O</div>
-      <div class="hud-help-notification-indicator show" id="hud-help-notification-indicator"></div>
-      <div class="hud-action-tooltip">
-        <div class="hud-action-tooltip-content">
-          Help - View game controls and tips.
-        </div>
-      </div>
-    </button>
-  </div>
+   <!-- Action Buttons (below clock) -->
+   <div class="hud-action-buttons">
+     <button class="hud-action-button" id="hud-quest-log-btn">
+       <img src="{{CDN_ASSETS_URL}}/icons/buttons/quests.png" alt="Quests" class="hud-action-button-icon">
+       <div class="hud-action-key-indicator">J</div>
+       <div class="hud-quest-count-indicator" id="hud-quest-count-indicator">0</div>
+       <div class="hud-action-tooltip">
+         <div class="hud-action-tooltip-content">
+           Quests - View your active and completed quests.
+         </div>
+       </div>
+     </button>
+     <button class="hud-action-button" id="hud-backpack-btn">
+       <img src="{{CDN_ASSETS_URL}}/icons/buttons/backpack.png" alt="Backpack" class="hud-action-button-icon">
+       <div class="hud-action-key-indicator">I</div>
+       <div class="hud-action-tooltip">
+         <div class="hud-action-tooltip-content">
+           Backpack - View and manage your backpack and equipment.
+         </div>
+       </div>
+     </button>
+     <button class="hud-action-button" id="hud-skills-btn">
+       <img src="{{CDN_ASSETS_URL}}/icons/buttons/skills.png" alt="Skills" class="hud-action-button-icon">
+       <div class="hud-action-key-indicator">M</div>
+       <div class="hud-action-tooltip">
+         <div class="hud-action-tooltip-content">
+           Skills - View your current character skills.
+         </div>
+       </div>
+     </button>
+     <button class="hud-action-button hud-help-button" id="hud-help-btn">
+       <div class="hud-help-icon">?</div>
+       <div class="hud-action-key-indicator">O</div>
+       <div class="hud-help-notification-indicator show" id="hud-help-notification-indicator"></div>
+       <div class="hud-action-tooltip">
+         <div class="hud-action-tooltip-content">
+           Help - View game controls and tips.
+         </div>
+       </div>
+     </button>
+   </div>
 
-  <!-- Player Status Bars (positioned above hotbar) -->
-  <div class="hud-status-container">
-    <!-- Health Bar -->
-    <div class="hud-health-bar">
-      <div class="hud-health-fill health-high" style="width: 75%;"></div>
-      <div class="hud-health-text">150 / 200</div>
-    </div>
-    
-    <!-- Chopping Progress Bar -->
-    <div class="hud-chopping-bar" style="display: none;">
-      <div class="hud-chopping-fill" style="width: 0%;"></div>
-      <div class="hud-chopping-text">Chopping...</div>
-    </div>
-    
-    <!-- Experience Bar -->
-    <div class="hud-exp-bar">
-      <div class="hud-exp-fill" style="width: 60%;"></div>
-      <div class="hud-exp-text">Level 12 - 1,200 / 2,000 XP</div>
-    </div>
-  </div>
+   <!-- Player Status Bars (positioned above hotbar) -->
+   <div class="hud-status-container">
+     <!-- Health Bar -->
+     <div class="hud-health-bar">
+       <div class="hud-health-fill health-high" style="width: 75%;"></div>
+       <div class="hud-health-text">150 / 200</div>
+     </div>
+     
+     <!-- Chopping Progress Bar -->
+     <div class="hud-chopping-bar" style="display: none;">
+       <div class="hud-chopping-fill" style="width: 0%;"></div>
+       <div class="hud-chopping-text">Chopping...</div>
+     </div>
+     
+     <!-- Experience Bar -->
+     <div class="hud-exp-bar">
+       <div class="hud-exp-fill" style="width: 60%;"></div>
+       <div class="hud-exp-text">Level 12 - 1,200 / 2,000 XP</div>
+     </div>
+   </div>
 
-  <!-- Progress Bar (for actions like chopping) -->
-  <div class="hud-progress-container" style="display: none;">
-    <div class="hud-progress-bar">
-      <div class="hud-progress-fill" style="width: 0%;"></div>
-      <div class="hud-progress-text">Chopping...</div>
-    </div>
-  </div>
+   <!-- Progress Bar (for actions like chopping) -->
+   <div class="hud-progress-container" style="display: none;">
+     <div class="hud-progress-bar">
+       <div class="hud-progress-fill" style="width: 0%;"></div>
+       <div class="hud-progress-text">Chopping...</div>
+     </div>
+   </div>
 
-  <!-- Crosshair -->
-  <div class="hud-crosshair">
-    <div class="hud-crosshair-horizontal"></div>
-    <div class="hud-crosshair-vertical"></div>
-  </div>
+   <!-- Crosshair -->
+   <div class="hud-crosshair">
+     <div class="hud-crosshair-horizontal"></div>
+     <div class="hud-crosshair-vertical"></div>
+   </div>
 
-  <!-- Mobile Control Buttons -->
-  <button class="hud-mobile-button" id="hud-attack-btn">
-    <img src="{{CDN_ASSETS_URL}}/icons/skills/combat.png" alt="Attack" class="hud-mobile-button-icon">
-  </button>
-  <button class="hud-mobile-button" id="hud-dodge-btn">
-    <img src="{{CDN_ASSETS_URL}}/icons/skills/agility.png" alt="Dodge" class="hud-mobile-button-icon">
-  </button>
-  <button class="hud-mobile-button" id="hud-jump-btn">
-    <img src="{{CDN_ASSETS_URL}}/icons/buttons/jump.png" alt="Jump" class="hud-mobile-button-icon">
-  </button>
-  <button class="hud-mobile-button" id="hud-interact-btn">
-    <img src="{{CDN_ASSETS_URL}}/icons/buttons/e-mobile.png" alt="Interact" class="hud-mobile-button-icon">
-  </button>
+   <!-- Mobile Control Buttons -->
+   <button class="hud-mobile-button" id="hud-attack-btn">
+     <img src="{{CDN_ASSETS_URL}}/icons/skills/combat.png" alt="Attack" class="hud-mobile-button-icon">
+   </button>
+   <button class="hud-mobile-button" id="hud-dodge-btn">
+     <img src="{{CDN_ASSETS_URL}}/icons/skills/agility.png" alt="Dodge" class="hud-mobile-button-icon">
+   </button>
+   <button class="hud-mobile-button" id="hud-jump-btn">
+     <img src="{{CDN_ASSETS_URL}}/icons/buttons/jump.png" alt="Jump" class="hud-mobile-button-icon">
+   </button>
+   <button class="hud-mobile-button" id="hud-interact-btn">
+     <img src="{{CDN_ASSETS_URL}}/icons/buttons/e-mobile.png" alt="Interact" class="hud-mobile-button-icon">
+   </button>
 
-  <!-- Hotbar -->
-  <div class="hud-hotbar-container">
-    <div class="hud-hotbar-grid">
-      <!-- Static hotbar slots -->
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">1</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">2</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">3</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">4</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">5</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">6</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">7</div>
-      </div>
-      <div class="hud-hotbar-slot">
-        <div class="hud-hotbar-slot-content">8</div>
-      </div>
-    </div>
-  </div>
+   <!-- Hotbar -->
+   <div class="hud-hotbar-container">
+     <div class="hud-hotbar-grid">
+       <!-- Static hotbar slots -->
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">1</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">2</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">3</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">4</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">5</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">6</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">7</div>
+       </div>
+       <div class="hud-hotbar-slot">
+         <div class="hud-hotbar-slot-content">8</div>
+       </div>
+     </div>
+   </div>
 </div>
 
 <!-- Notification Toast Container (outside HUD overlay for proper z-indexing) -->
@@ -8163,6 +8166,9 @@ window.ItemTooltips = (function() {
         break;
       case 'stopTreeChopping':
         stopTreeChopping();
+        break;
+      case 'syncCoordinates':
+        updateCoordinates(data.x, data.y, data.z);
         break;
     }
   });
@@ -8610,7 +8616,6 @@ window.ItemTooltips = (function() {
       setTimeout(resolve, duration);
     });
   }
-
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -9408,7 +9413,6 @@ window.ItemTooltips = (function() {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
   }
-
   /* ============================================
      NOTIFICATION TOASTS
      ============================================ */

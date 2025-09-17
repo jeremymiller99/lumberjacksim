@@ -1,6 +1,6 @@
 {
   "health": 110,
-  "currentRegionId": "forest1",
+  "currentRegionId": "oakForest",
   "skillExperience": [
     [
       "lumber",
@@ -19,10 +19,6 @@
   "hotbar": {
     "items": [
       {
-        "position": 0,
-        "itemId": "wood_axe"
-      },
-      {
         "position": 1,
         "itemId": "raw_log",
         "quantity": 135
@@ -33,6 +29,15 @@
     "quests": []
   },
   "storage": {
+    "items": []
+  },
+  "currentRegionSpawnFacingAngle": 0,
+  "currentRegionSpawnPoint": {
+    "x": 0,
+    "y": 2,
+    "z": 0
+  },
+  "wearables": {
     "items": []
   }
 }

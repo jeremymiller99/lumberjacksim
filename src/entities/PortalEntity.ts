@@ -10,12 +10,12 @@ import {
   Vector3Like
 } from 'hytopia';
 
-import GameManager from '../GameManager';
+import type GameRegion from '../GameRegion';
 import GamePlayerEntity from '../GamePlayerEntity';
 
 export type PortalEntityOptions = {
   delayS?: number;
-  destinationRegionId: string;
+  destinationRegion: GameRegion;
   destinationRegionFacingAngle?: number;
   destinationRegionPosition: Vector3Like;
   type?: 'normal' | 'boss';
@@ -23,18 +23,19 @@ export type PortalEntityOptions = {
 
 export default class PortalEntity extends Entity {
   public readonly delayS: number;
-  public readonly destinationRegionId: string;
+  public readonly destinationRegion: GameRegion;
   public readonly destinationRegionFacingAngle: number;
   public readonly destinationRegionPosition: Vector3Like;
   private readonly _playerTimeouts = new Map<GamePlayerEntity, NodeJS.Timeout>();
 
   public constructor(options: PortalEntityOptions) {
-    const colliderOptions = Collider.optionsFromModelUri('models/environment/portal.gltf', options.modelScale ?? 1, ColliderShape.BLOCK) as BlockColliderOptions;
+    const modelUri = options.modelUri ?? 'models/misc/selection-indicator.gltf';
+    const colliderOptions = Collider.optionsFromModelUri(modelUri, options.modelScale ?? 1, ColliderShape.BLOCK) as BlockColliderOptions;
     colliderOptions.halfExtents!.x = Math.max(colliderOptions.halfExtents!.x, 0.5);
 
     super({
-      modelScale: 2,
-      modelUri: 'models/environment/portal.gltf',
+      modelScale: options.modelScale ?? 2,
+      modelUri,
       modelLoopedAnimations: [ 'idle' ],
       rigidBodyOptions: {
         type: RigidBodyType.FIXED,
@@ -75,24 +76,17 @@ export default class PortalEntity extends Entity {
     });
 
     this.delayS = options.delayS ?? 0;
-    this.destinationRegionId = options.destinationRegionId;
+    this.destinationRegion = options.destinationRegion;
     this.destinationRegionFacingAngle = options.destinationRegionFacingAngle ?? 0;
     this.destinationRegionPosition = options.destinationRegionPosition;
   }
 
   private _teleportPlayer(player: GamePlayerEntity): void {
-    const destinationRegion = GameManager.instance.getRegion(this.destinationRegionId);
-
-    if (!destinationRegion) {
-      ErrorHandler.warning(`PortalEntity: Destination region ${this.destinationRegionId} not found`);
-      return;
-    }
-
     if (player.isDead) {
       return;
     }
 
-    player.joinRegion(destinationRegion, this.destinationRegionFacingAngle, this.destinationRegionPosition);
+    player.joinRegion(this.destinationRegion, this.destinationRegionFacingAngle, this.destinationRegionPosition);
 
     this._playerTimeouts.delete(player);
   }

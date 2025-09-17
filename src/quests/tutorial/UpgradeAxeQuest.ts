@@ -9,7 +9,7 @@ import type GamePlayerEntity from '../../GamePlayerEntity';
 import { BaseChoppableTreeEntityPlayerEvent } from '../../entities/forageables/ChoppableTreeEntity';
 import type { BaseChoppableTreeEntityPlayerEventPayloads } from '../../entities/forageables/ChoppableTreeEntity';
 
-import LumberMerchantEntity from '../../regions/forest1/npcs/LumberMerchantEntity';
+import LumberMerchantEntity from '../../regions/oakForest/npcs/LumberMerchantEntity';
 import RustyAxeItem from '../../items/axes/RustyAxeItem';
 import RawLogItem from '../../items/materials/RawLogItem';
 import GoldItem from '../../items/general/GoldItem';

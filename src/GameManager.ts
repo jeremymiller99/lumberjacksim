@@ -5,7 +5,11 @@ import ItemRegistry from './items/ItemRegistry';
 import type GameRegion from './GameRegion';
 
 // Only lumber-related region
-import Forest1Region from './regions/forest1/Forest1Region';
+import OakForestRegion from './regions/oakForest/OakForestRegion';
+import CursedForestRegion from './regions/cursedForest/CursedForestRegion';
+import SandyForestRegion from './regions/sandyForest/SandyForestRegion';
+import SnowForestRegion from './regions/snowForest/SnowForestRegion';
+import HubRegion from './regions/Hub/HubRegion';
 
 export default class GameManager {
   public static readonly instance = new GameManager();
@@ -66,17 +70,40 @@ export default class GameManager {
   }
 
   public loadRegions(): void {
-    // Only Forest1 for lumber testing
-    const forest1Region = new Forest1Region();
-    this._regions.set(forest1Region.id, forest1Region);
-    GameClock.instance.addRegionClockCycle(forest1Region);
-    this._startRegion = forest1Region;
+    const hubRegion = new HubRegion();
+    this._regions.set(hubRegion.id, hubRegion);
+    GameClock.instance.addRegionClockCycle(hubRegion);
 
-    console.log('GameManager: Loaded Forest1 region (lumber-only)');
+    const oakForestRegion = new OakForestRegion();
+    this._regions.set(oakForestRegion.id, oakForestRegion);
+    GameClock.instance.addRegionClockCycle(oakForestRegion);
+
+    const cursedForestRegion = new CursedForestRegion();
+    this._regions.set(cursedForestRegion.id, cursedForestRegion);
+    GameClock.instance.addRegionClockCycle(cursedForestRegion);
+
+    const sandyForestRegion = new SandyForestRegion();
+    this._regions.set(sandyForestRegion.id, sandyForestRegion);
+    GameClock.instance.addRegionClockCycle(sandyForestRegion);
+
+    const snowForestRegion = new SnowForestRegion();
+    this._regions.set(snowForestRegion.id, snowForestRegion);
+    GameClock.instance.addRegionClockCycle(snowForestRegion);
+
+    // Spawn portals in Hub to each region at specified coordinates
+    hubRegion.spawnPortalTo(oakForestRegion, { x: 13, y: 1, z: -5 });
+    hubRegion.spawnPortalTo(cursedForestRegion, { x: 15, y: 1, z: 17 });
+    hubRegion.spawnPortalTo(sandyForestRegion, { x: -8, y: 1, z: 18 });
+    hubRegion.spawnPortalTo(snowForestRegion, { x: -6, y: 1, z: -8 });
+
+    this._startRegion = hubRegion;
+
+    console.log('GameManager: Loaded Hub, OakForest, CursedForest, SandyForest, and SnowForest regions');
   }
 
   private _selectWorldForPlayer = async (player: Player): Promise<World | undefined> => {
-    const gamePlayer = GamePlayer.getOrCreate(player);
-    return gamePlayer.currentRegion?.world ?? this._startRegion.world;
+    GamePlayer.getOrCreate(player);
+    // Always start players in the configured start region (hub)
+    return this._startRegion.world;
   }
 }
