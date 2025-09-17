@@ -11,12 +11,12 @@ export default class HubRegion extends GameRegion {
       name: 'Hub',
       map: hubMap,
       skyboxUri: 'skyboxes/partly-cloudy',
-      spawnPoint: { x: 0, y: 2, z: 0 },
+      spawnPoint: { x: 5, y: 2, z: 5 },
       ambientAudioUri: 'audio/music/hytopia-main-theme.mp3',
       respawnOverride: {
         regionId: 'hub',
         facingAngle: 0,
-        spawnPoint: { x: 0, y: 2, z: 0 },
+        spawnPoint: { x: 5, y: 2, z: 5 },
       },
     });
   }

@@ -47,6 +47,7 @@ export default class GamePlayerEntity extends DefaultPlayerEntity implements IDa
   private _isMovementDisabled: boolean = false;
   private _lastDodgeTimeMs: number = 0;
   private _nameplateSceneUI: SceneUI;
+  private _lastCoordsSyncTimeMs: number = 0;
 
 
   public constructor(gamePlayer: GamePlayer) {
@@ -376,6 +377,18 @@ export default class GamePlayerEntity extends DefaultPlayerEntity implements IDa
       this._gamePlayer.toggleHelp();
       input.o = false;
     }
+
+    // Throttled UI sync of coordinates (top-center HUD)
+    const nowMs = performance.now();
+    if (nowMs - this._lastCoordsSyncTimeMs >= 200) {
+      this.player.ui.sendData({
+        type: 'syncCoordinates',
+        x: this.position.x,
+        y: this.position.y,
+        z: this.position.z,
+      });
+      this._lastCoordsSyncTimeMs = nowMs;
+    }
   }
 
   private _setupPlayerCamera(): void {
@@ -419,6 +432,14 @@ export default class GamePlayerEntity extends DefaultPlayerEntity implements IDa
       type: 'syncClock',
       hour: GameClock.instance.hour,
       minute: GameClock.instance.minute,
+    });
+
+    // Initial coordinates sync
+    this.player.ui.sendData({
+      type: 'syncCoordinates',
+      x: this.position.x,
+      y: this.position.y,
+      z: this.position.z,
     });
 
     // Show Area Banner
