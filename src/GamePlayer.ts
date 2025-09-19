@@ -339,6 +339,8 @@ export default class GamePlayer {
   }
 
   public despawnFromRegion(): void {
+    // Clean up any wearable entities before despawning
+    this.wearables.despawnAllEquippedWearables();
     this._currentEntity = undefined;
   }
 
@@ -354,7 +356,7 @@ export default class GamePlayer {
     this.setCurrentRegion(region);
     this.setCurrentRegionSpawnFacingAngle(facingAngle);
     this.setCurrentRegionSpawnPoint(spawnPoint);              
-    this.save();
+    this.saveImmediate(); // Use immediate save to prevent race conditions during region transitions
     this.player.joinWorld(region.world);
     
     // Update portal labels when entering a region
@@ -450,6 +452,11 @@ export default class GamePlayer {
     this._saveTimeout = setTimeout(() => { // prevent spamming the server with save requests
       this.player.setPersistedData(this._serialize());
     }, 500);
+  }
+
+  public saveImmediate(): void {
+    clearTimeout(this._saveTimeout);
+    this.player.setPersistedData(this._serialize());
   }
 
   public showNotification(message: string, notificationType: NotificationType): void {
@@ -865,6 +872,11 @@ export default class GamePlayer {
   private _setupNewPlayer(): void {
     // Give new players starting currency
     this._currency = 0; // Start with 0 gold
+    
+    // Give new players a starting rusty axe
+    import('./items/axes/RustyAxeItem').then(({ default: RustyAxeItem }) => {
+      this.addHeldItem(RustyAxeItem, 1);
+    });
     
     // Auto-start the first tutorial quest for new players
     import('./quests/tutorial/FirstChopQuest').then(({ default: FirstChopQuest }) => {

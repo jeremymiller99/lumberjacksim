@@ -1,46 +1,30 @@
 import BaseMerchantEntity from '../../../entities/BaseMerchantEntity';
 import type { BaseMerchantEntityOptions } from '../../../entities/BaseMerchantEntity';
 
-// Materials (cursed wood might be valuable)
-import RawLogItem from '../../../items/materials/RawLogItem';
-
-// Dark/mysterious themed items
-import LeatherHoodItem from '../../../items/wearables/LeatherHoodItem';
-import NoblesCloakItem from '../../../items/wearables/NoblesCloakItem';
-import GoldArmorCapeItem from '../../../items/wearables/GoldArmorCapeItem';
-import GoldenAmuletItem from '../../../items/wearables/GoldenAmuletItem';
-import SilverRingItem from '../../../items/wearables/SilverRingItem';
+// Tools - Cursed-specialized
+import CursedAxeItem from '../../../items/axes/CursedAxeItem';
 
 export default class DarkMerchantEntity extends BaseMerchantEntity {
   public constructor(options?: Partial<BaseMerchantEntityOptions>) {
     super({
       buyableItemClasses: [
-        // Cursed materials (higher price due to rarity)
-        RawLogItem,             // 5 gold - cursed wood is more valuable
-        
-        // Dark aesthetic items
-        LeatherHoodItem,        // 50 gold - mysterious hood
-        NoblesCloakItem,        // 500 gold - dark noble's cloak
-        GoldArmorCapeItem,      // 500 gold - intimidating cape
-        
-        // Mystical accessories
-        GoldenAmuletItem,       // 400 gold - protective charm
-        SilverRingItem,         // 300 gold - cursed ring
+        // Cursed Specialty
+        CursedAxeItem,          // 200 gold - shadow-forged axe for cursed wood
       ],
       dialogueAvatarImageUri: 'avatars/gravekeeper.png',
-      dialogueTitle: 'Shadow Dealer',
+      dialogueTitle: 'Shadow Axe Dealer',
       idleAnimations: [ 'idle' ],
       modelUri: 'models/npcs/merchant.gltf',
       modelScale: 0.75,
-      name: 'Merchant Umbra',
+      name: 'Axe Merchant Umbra',
       additionalDialogueOptions: [
         {
           text: `Why do you stay in this cursed place?`,
           nextDialogue: {
-            text: `*whispers darkly* The curse doesn't affect me anymore... I've been here so long, I've become part of the shadows. The burnt wood here holds dark power, and my wares carry the essence of this realm. Perfect for those who embrace the darkness.`,
+            text: `*whispers darkly* The curse doesn't affect me anymore... I've been here so long, I've become part of the shadows. The cursed wood here is unique - harder than normal timber. My axes are the only tools that can properly harvest it.`,
             options: [
               {
-                text: `That's... unsettling.`,
+                text: `That's... interesting.`,
                 dismiss: true,
                 pureExit: true,
               },
@@ -48,9 +32,9 @@ export default class DarkMerchantEntity extends BaseMerchantEntity {
           }
         },
         {
-          text: `Are your items cursed?`,
+          text: `Are your axes cursed?`,
           nextDialogue: {
-            text: `*chuckles mysteriously* Cursed? Or blessed with shadow magic? My cloaks hide you from prying eyes, my jewelry protects against dark forces. What some call cursed, others call powerful. The choice is yours, adventurer.`,
+            text: `*chuckles mysteriously* My Cursed Axe is imbued with shadow magic - the only tool that truly masters cursed wood. 45% faster chopping and the best yields you'll find. What some fear, others find profitable.`,
             options: [
               {
                 text: `I'll... consider it.`,

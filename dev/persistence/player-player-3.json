@@ -51,5 +51,11 @@
   "hotbarSelectedIndex": 0,
   "wearables": {
     "items": []
+  },
+  "currentRegionSpawnFacingAngle": 0,
+  "currentRegionSpawnPoint": {
+    "x": 5,
+    "y": 2,
+    "z": 5
   }
 }

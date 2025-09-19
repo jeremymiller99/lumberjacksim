@@ -37,6 +37,7 @@ export const WEARABLE_SLOT_ANCHORS: Record<WearableSlot, string> = {
 
 export default class Wearables extends ItemInventory {
   private _owner: GamePlayer;
+  private _equippedItems: Map<WearableSlot, BaseWearableItem> = new Map();
 
   public constructor(owner: GamePlayer) {
     super(6, 3, 'wearables'); // 6 wearable slots, 3 wide grid
@@ -111,15 +112,17 @@ export default class Wearables extends ItemInventory {
     if (slot && this._owner.currentEntity) {
       const anchorPoint = WEARABLE_SLOT_ANCHORS[slot];
       
-      // First, despawn any existing wearable in this slot
-      const existingItem = this.getWearableAtSlot(slot);
-      if (existingItem && existingItem !== item && existingItem instanceof BaseWearableItem) {
-        existingItem.despawnEntity();
+      // Despawn any previously equipped item in this slot
+      const previouslyEquipped = this._equippedItems.get(slot);
+      if (previouslyEquipped) {
+        previouslyEquipped.despawnEntity();
+        this._equippedItems.delete(slot);
       }
       
+      // If a new wearable item was equipped, spawn it
       if (item && item instanceof BaseWearableItem) {
-        // Spawn the wearable model on the player
         item.spawnEntityAsWorn(this._owner.currentEntity, anchorPoint);
+        this._equippedItems.set(slot, item);
       }
     }
   }
@@ -128,13 +131,27 @@ export default class Wearables extends ItemInventory {
   public spawnAllEquippedWearables(): void {
     if (!this._owner.currentEntity) return;
     
+    // Clear the equipped items map first (in case of reconnect)
+    this._equippedItems.clear();
+    
     for (const [slotName, position] of Object.entries(WEARABLE_SLOT_POSITIONS)) {
       const slot = slotName as WearableSlot;
       const item = this.getItemAt(position);
       if (item && item instanceof BaseWearableItem) {
         const anchorPoint = WEARABLE_SLOT_ANCHORS[slot];
         item.spawnEntityAsWorn(this._owner.currentEntity, anchorPoint);
+        this._equippedItems.set(slot, item);
       }
     }
+  }
+  
+  // Method to despawn all currently equipped wearables (called when player entity is despawned)
+  public despawnAllEquippedWearables(): void {
+    for (const [slot, item] of this._equippedItems) {
+      if (item && item.entity) {
+        item.despawnEntity();
+      }
+    }
+    this._equippedItems.clear();
   }
 }

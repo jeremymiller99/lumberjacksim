@@ -156,7 +156,7 @@ export default class BaseForageableEntity extends BaseEntity {
       // Create a separate SceneUI for tree chopping progress
       this._choppingProgressSceneUI = new SceneUI({
         attachedToEntity: this,
-        offset: { x: 0, y: -0.5, z: 0 },
+        offset: { x: 0, y: -1.0, z: 0 },
         templateId: 'entity-nameplate',
         viewDistance: this._nameplateViewDistance,
         state: {

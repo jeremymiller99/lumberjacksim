@@ -1,41 +1,27 @@
 import BaseMerchantEntity from '../../../entities/BaseMerchantEntity';
 import type { BaseMerchantEntityOptions } from '../../../entities/BaseMerchantEntity';
 
-// Advanced tools
+// Tools - Gold axe only
 import GoldAxeItem from '../../../items/axes/GoldAxeItem';
-
-// Winter gear and premium items
-import LeatherBootsItem from '../../../items/wearables/LeatherBootsItem';
-import LeatherGlovesItem from '../../../items/wearables/LeatherGlovesItem';
-import NoblesCloakItem from '../../../items/wearables/NoblesCloakItem';
-import GoldArmorCapeItem from '../../../items/wearables/GoldArmorCapeItem';
 
 export default class WinterMerchantEntity extends BaseMerchantEntity {
   public constructor(options?: Partial<BaseMerchantEntityOptions>) {
     super({
       buyableItemClasses: [
-        // Premium tools
-        GoldAxeItem,            // 200 gold - required for ancient trees
-        
-        // Winter survival gear
-        LeatherBootsItem,       // 45 gold - warm feet
-        LeatherGlovesItem,      // 40 gold - warm hands
-        
-        // Premium cloaks and capes
-        NoblesCloakItem,        // 500 gold - prestigious cloak
-        GoldArmorCapeItem,      // 500 gold - golden cape
+        // Premium lumber tools
+        GoldAxeItem,            // 200 gold - golden halberd, works on all pine trees
       ],
       dialogueAvatarImageUri: 'avatars/merchant.png',
-      dialogueTitle: 'Winter Trader',
+      dialogueTitle: 'Winter Axe Trader',
       idleAnimations: [ 'idle' ],
       modelUri: 'models/npcs/merchant.gltf',
       modelScale: 0.75,
-      name: 'Merchant Frost',
+      name: 'Axe Merchant Frost',
       additionalDialogueOptions: [
         {
           text: `How do you survive in this cold?`,
           nextDialogue: {
-            text: `Years of experience, friend! The cold doesn't bother me anymore. I specialize in the finest winter gear and premium equipment. Only the best tools and warmest clothing make it through these frozen lands.`,
+            text: `Years of experience, friend! The cold doesn't bother me anymore. I specialize in axes perfect for winter conditions - frozen wood is tough, so you need quality tools. My axes are tested in these very frozen lands!`,
             options: [
               {
                 text: `Impressive dedication!`,
@@ -46,12 +32,12 @@ export default class WinterMerchantEntity extends BaseMerchantEntity {
           }
         },
         {
-          text: `Why are your prices so high?`,
+          text: `Tell me about your axe.`,
           nextDialogue: {
-            text: `Quality comes at a cost! My Gold Axes can cut through the toughest ancient trees, and my cloaks are crafted by the finest artisans. You're not just buying gear - you're investing in the best equipment money can buy.`,
+            text: `I specialize in the Golden Halberd - it's the finest tool for pine wood! This isn't just any axe - it's a legendary halberd that cuts through the toughest frozen pine like butter. Perfect for serious winter lumberjacks who demand the best!`,
             options: [
               {
-                text: `I understand the value.`,
+                text: `A halberd for chopping? Interesting!`,
                 dismiss: true,
                 pureExit: true,
               },

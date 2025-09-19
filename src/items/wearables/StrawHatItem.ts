@@ -4,11 +4,11 @@ export default class StrawHatItem extends BaseWearableItem {
   static readonly id = 'straw_hat';
   static readonly displayName = 'Straw Hat';
   static readonly iconImageUri = 'models/players/Cosmetics/summer-straw-hat-head-cosmetic/export/summerstrawhat.png';
-  static readonly description = 'A wide-brimmed straw hat perfect for shielding eyes from the sun during long expeditions. Favored by seasoned explorers.';
+  static readonly description = 'A wide-brimmed straw hat that repels bees with its natural scent. Essential protection for oak forest lumberjacks who want to avoid bee encounters.';
   static readonly rarity = 'unusual';
   static readonly wearableSlot = 'helmet';
-  static readonly buyPrice = 120;
-  static readonly sellPrice = 40;
+  static readonly buyPrice = 50;
+  static readonly sellPrice = 20;
   
   // 3D model when dropped
   static readonly dropModelUri = 'models/players/Cosmetics/summer-straw-hat-head-cosmetic/export/summerstrawhat.gltf';

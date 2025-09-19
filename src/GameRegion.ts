@@ -189,7 +189,7 @@ export default class GameRegion {
     // If this causes issues in the future, we should move .remove to the actualy
     // Player closed connection event.
     const gamePlayer = GamePlayer.getOrCreate(player);
-    gamePlayer.save(); // Final save before player leaves
+    gamePlayer.saveImmediate(); // Use immediate save to prevent race conditions during region transitions
     GamePlayer.remove(player);
 
     this._playerCount--;

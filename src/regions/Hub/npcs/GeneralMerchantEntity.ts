@@ -1,16 +1,14 @@
 import BaseMerchantEntity from '../../../entities/BaseMerchantEntity';
 import type { BaseMerchantEntityOptions } from '../../../entities/BaseMerchantEntity';
 
-// Basic tools and materials
+// Basic tools
 import RustyAxeItem from '../../../items/axes/RustyAxeItem';
-import RawLogItem from '../../../items/materials/RawLogItem';
 
-// Basic wearables - starter gear
-import LeatherHoodItem from '../../../items/wearables/LeatherHoodItem';
-import LeatherTunicItem from '../../../items/wearables/LeatherTunicItem';
-import LeatherGlovesItem from '../../../items/wearables/LeatherGlovesItem';
-import LeatherLeggingsItem from '../../../items/wearables/LeatherLeggingsItem';
-import LeatherBootsItem from '../../../items/wearables/LeatherBootsItem';
+// Hub specialty wearables
+import StrawHatItem from '../../../items/wearables/StrawHatItem';
+import GlassesItem from '../../../items/wearables/GlassesItem';
+import HytopiaGlassesItem from '../../../items/wearables/HytopiaGlassesItem';
+import GoldArmorCapeItem from '../../../items/wearables/GoldArmorCapeItem';
 
 export default class GeneralMerchantEntity extends BaseMerchantEntity {
   public constructor(options?: Partial<BaseMerchantEntityOptions>) {
@@ -19,15 +17,11 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
         // Basic starter tools
         RustyAxeItem,           // 25 gold - starter axe
         
-        // Materials
-        RawLogItem,             // 2 gold - basic material
-        
-        // Basic adventurer gear set
-        LeatherHoodItem,        // 50 gold
-        LeatherTunicItem,       // 75 gold
-        LeatherGlovesItem,      // 40 gold
-        LeatherLeggingsItem,    // 60 gold
-        LeatherBootsItem,       // 45 gold
+        // Hub specialty wearables  
+        StrawHatItem,           // 50 gold - bee repellent hat
+        GlassesItem,            // 80 gold - basic eyewear
+        HytopiaGlassesItem,     // 200 gold - premium eyewear
+        GoldArmorCapeItem,      // 500 gold - prestigious cape
       ],
       dialogueAvatarImageUri: 'avatars/merchant.png',
       dialogueTitle: 'Hub Trader',
@@ -39,7 +33,7 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
         {
           text: `Tell me about this place.`,
           nextDialogue: {
-            text: `Welcome to the Hub! This is the central trading post where adventurers from all regions come to trade. I sell basic starter gear and materials. For specialized equipment, you'll want to visit the merchants in other regions.`,
+            text: `Welcome to the Hub! This is the central trading post where adventurers from all regions come to trade. I specialize in stylish accessories and premium wearables. For specialized lumber tools, visit the merchants in other regions.`,
             options: [
               {
                 text: `Thanks for the info!`,
@@ -52,7 +46,7 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
         {
           text: `What should I buy first?`,
           nextDialogue: {
-            text: `If you're just starting out, grab a Rusty Axe and some basic leather armor. The axe will let you chop young trees, and the armor will keep you protected. Once you've earned some gold, visit the specialized merchants in other regions!`,
+            text: `If you're just starting out, grab a Rusty Axe for chopping trees. For style and protection, try my Straw Hat or basic Glasses. Save up for the premium Hytopia Glasses or the legendary Gold Armor Cape once you've earned some gold!`,
             options: [
               {
                 text: `Good advice, thanks!`,

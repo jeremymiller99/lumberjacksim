@@ -4,12 +4,12 @@ import GamePlayer from './GamePlayer';
 import ItemRegistry from './items/ItemRegistry';
 import type GameRegion from './GameRegion';
 
-// Only lumber-related region
+// Import all regions
+import HubRegion from './regions/Hub/HubRegion';
 import OakForestRegion from './regions/oakForest/OakForestRegion';
 import CursedForestRegion from './regions/cursedForest/CursedForestRegion';
 import SandyForestRegion from './regions/sandyForest/SandyForestRegion';
 import SnowForestRegion from './regions/snowForest/SnowForestRegion';
-import HubRegion from './regions/Hub/HubRegion';
 
 export default class GameManager {
   public static readonly instance = new GameManager();

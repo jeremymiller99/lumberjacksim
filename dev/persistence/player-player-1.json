@@ -1,11 +1,11 @@
 {
-  "health": 160,
+  "health": 190,
   "currentRegionId": "hub",
   "currentRegionSpawnFacingAngle": 0,
   "currentRegionSpawnPoint": {
-    "x": 0,
+    "x": 5,
     "y": 2,
-    "z": 0
+    "z": 5
   },
   "skillExperience": [
     [
@@ -14,7 +14,7 @@
     ],
     [
       "lumber",
-      2814
+      6139
     ],
     [
       "bartering",
@@ -28,19 +28,6 @@
     "items": [
       {
         "position": 0,
-        "itemId": "rusty_axe"
-      },
-      {
-        "position": 2,
-        "itemId": "gold_axe"
-      },
-      {
-        "position": 1,
-        "itemId": "raw_log",
-        "quantity": 1847
-      },
-      {
-        "position": 3,
         "itemId": "gold_axe"
       }
     ]
@@ -55,5 +42,5 @@
     "items": []
   },
   "hotbarSelectedIndex": 0,
-  "currency": 4975
+  "currency": 25959
 }

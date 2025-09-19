@@ -179,7 +179,22 @@ export default abstract class BaseItem implements IInteractable {
       rigidBodyOptions: {
         type: RigidBodyType.DYNAMIC,
         colliders: [
-          Collider.optionsFromModelUri(modelUri, this.dropModelScale * 6, ColliderShape.BLOCK)
+          Collider.optionsFromModelUri(modelUri, this.dropModelScale * 6, ColliderShape.BLOCK),
+          // Add a sensor collider for automatic pickup on player collision
+          {
+            shape: ColliderShape.BLOCK,
+            halfExtents: { x: 0.8, y: 0.8, z: 0.8 }, // Slightly larger pickup area
+            collisionGroups: {
+              belongsTo: [ CustomCollisionGroup.ITEM ],
+              collidesWith: [ CollisionGroup.PLAYER ],
+            },
+            isSensor: true,
+            onCollision: (other, started) => {
+              if (started && other instanceof GamePlayerEntity) {
+                this.interact(other);
+              }
+            },
+          }
         ],
       },
     });

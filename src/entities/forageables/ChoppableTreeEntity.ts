@@ -2,6 +2,10 @@ import BaseForageableEntity, { BaseForageableEntityOptions, ForageableItemDrop }
 import { SkillId } from '../../config';
 import type GamePlayerEntity from '../../GamePlayerEntity';
 import RawLogItem from '../../items/materials/RawLogItem';
+import OakLogItem from '../../items/materials/OakLogItem';
+import PalmLogItem from '../../items/materials/PalmLogItem';
+import PineLogItem from '../../items/materials/PineLogItem';
+import CursedLogItem from '../../items/materials/CursedLogItem';
 import BaseLumberToolItem from '../../items/BaseLumberToolItem';
 import MinigameManager from '../../systems/MinigameManager';
 import { MinigameEvent } from '../../systems/BaseMinigame';
@@ -32,8 +36,8 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
     const treeType = options.treeType ?? 'oak';
     const maturity = options.maturity ?? 'mature';
     
-    // Define drops based on tree maturity - only Raw Logs now
-    const itemDrops: ForageableItemDrop[] = ChoppableTreeEntity._getTreeDrops(maturity);
+    // Define drops based on tree type and maturity
+    const itemDrops: ForageableItemDrop[] = ChoppableTreeEntity._getTreeDrops(treeType, maturity);
     
     // Set chopping duration based on maturity
     const forageDurationMs = ChoppableTreeEntity._getChoppingDuration(maturity);
@@ -99,25 +103,58 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
     const equippedWeapon = interactor.gamePlayer.hotbar.selectedItem;
     const isLumberTool = equippedWeapon && BaseLumberToolItem.isLumberToolItem(equippedWeapon);
     
-    // Tool requirements for different tree maturities
-    if (this._maturity === 'mature' && !isLumberTool) {
-      return interactor.showNotification(`You need an axe to chop down mature trees!`, 'error');
-    }
-    
-    if (this._maturity === 'ancient') {
+    // Tool requirements based on tree type and region
+    if (this._maturity === 'mature' || this._maturity === 'ancient') {
       if (!isLumberTool) {
-        return interactor.showNotification(`You need an axe to chop down ancient trees!`, 'error');
+        return interactor.showNotification(`You need an axe to chop down ${this._maturity} trees!`, 'error');
       }
       
-      // Ancient trees specifically require gold axe
-      const isGoldAxe = equippedWeapon && (equippedWeapon.constructor as any).id === 'gold_axe';
-      if (!isGoldAxe) {
-        return interactor.showNotification(`Ancient trees can only be chopped down with a Gold Axe!`, 'error');
+      const axeId = (equippedWeapon.constructor as any).id;
+      
+      // Ancient trees have stricter requirements than mature trees
+      if (this._maturity === 'ancient') {
+        // Ancient trees require specialized axes - no rusty axe allowed
+        if (this._treeType === 'oak') {
+          if (axeId === 'rusty_axe') {
+            return interactor.showNotification(`Ancient oak trees are too tough for a rusty axe! You need at least an Iron Axe.`, 'error');
+          }
+        } else if (this._treeType === 'pine') {
+          if (axeId !== 'gold_axe') {
+            return interactor.showNotification(`Ancient pine trees require a Gold Axe (Halberd)!`, 'error');
+          }
+        } else if (this._treeType === 'palm') {
+          if (axeId === 'rusty_axe') {
+            return interactor.showNotification(`Ancient palm trees require at least a Palm Axe or Iron Axe!`, 'error');
+          }
+        } else if (this._treeType === 'cursed') {
+          if (axeId !== 'cursed_axe') {
+            return interactor.showNotification(`Ancient cursed trees can only be chopped with a Cursed Axe!`, 'error');
+          }
+        }
+      } else if (this._maturity === 'mature') {
+        // Mature trees are more lenient - rusty axe works but is slow
+        if (this._treeType === 'pine') {
+          // Pine trees still require specialized axes even for mature
+          if (axeId !== 'gold_axe') {
+            return interactor.showNotification(`Mature pine trees require a Gold Axe (Halberd)!`, 'error');
+          }
+        } else if (this._treeType === 'palm') {
+          if (axeId === 'rusty_axe') {
+            return interactor.showNotification(`Mature palm trees require at least a Palm Axe or Iron Axe!`, 'error');
+          }
+        } else if (this._treeType === 'cursed') {
+          if (axeId !== 'cursed_axe') {
+            return interactor.showNotification(`Mature cursed trees can only be chopped with a Cursed Axe!`, 'error');
+          }
+        }
+        // Oak mature trees allow rusty axe (but will be slow)
       }
     }
     
     // Check for bee encounter (1/5 chance) only if bees aren't already active and this is an oak tree
-    const hasBeehive = !this._hasActiveBees && this._treeType === 'oak' && Math.random() < 0.2;
+    // Also check if player is wearing a straw hat (bee repellent)
+    const wearingStrawHat = interactor.gamePlayer.wearables.getWearableAtSlot('helmet')?.constructor.name === 'StrawHatItem';
+    const hasBeehive = !this._hasActiveBees && this._treeType === 'oak' && !wearingStrawHat && Math.random() < 0.2;
     
     if (hasBeehive) {
       this._triggerBeeEncounter(interactor);
@@ -276,10 +313,19 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
       // Get axe-specific bonuses
       const speedBonus = equippedWeapon.choppingSpeedBonus || 0;
       const yieldBonus = equippedWeapon.woodYieldBonus || 0;
+      const axeId = (equippedWeapon.constructor as any).id;
       
       // Apply speed bonus by reducing chopping time
+      let finalSpeedBonus = speedBonus;
+      
+      // Special penalty for rusty axe on mature trees (make it much slower)
+      if (axeId === 'rusty_axe' && this._maturity === 'mature') {
+        // Rusty axe on mature trees gets a significant penalty (-50% speed = +100% time)
+        finalSpeedBonus = -0.5; // This will make chopping take 50% longer
+      }
+      
       const originalDuration = this.forageDurationMs;
-      (this as any)._forageDurationMs = Math.floor(originalDuration * (1 - speedBonus));
+      (this as any)._forageDurationMs = Math.floor(originalDuration * (1 - finalSpeedBonus));
       
       // Apply yield bonus by temporarily increasing drop quantities
       if (yieldBonus > 0) {
@@ -304,12 +350,33 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
     super.despawn();
   }
 
-  private static _getTreeDrops(maturity: string): ForageableItemDrop[] {
-    // Simplified: Only drop Raw Logs, more for bigger trees
+  private static _getTreeDrops(treeType: string, maturity: string): ForageableItemDrop[] {
+    // Determine wood type based on tree type
+    let logItemClass;
+    switch (treeType) {
+      case 'oak':
+        logItemClass = OakLogItem;
+        break;
+      case 'palm':
+        logItemClass = PalmLogItem;
+        break;
+      case 'snow':
+      case 'pine':
+        logItemClass = PineLogItem;
+        break;
+      case 'burnt':
+      case 'cursed':
+        logItemClass = CursedLogItem;
+        break;
+      default:
+        logItemClass = RawLogItem; // Fallback to generic logs
+    }
+    
+    // Quantity based on maturity
     const logQuantity = maturity === 'ancient' ? 8 : maturity === 'mature' ? 5 : 3;
     
     return [{
-      itemClass: RawLogItem,
+      itemClass: logItemClass,
       minQuantity: Math.floor(logQuantity * 0.8),
       maxQuantity: logQuantity,
       weight: 100,

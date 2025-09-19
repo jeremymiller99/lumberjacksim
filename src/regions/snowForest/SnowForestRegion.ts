@@ -55,8 +55,8 @@ export default class SnowForestRegion extends GameRegion {
       ],
       spawnRegions: [
         {
-          min: { x: -30, y: 1, z: -30 },
-          max: { x: 30, y: 5, z: 30 },
+          min: { x: -30, y: 0.5, z: -30 },   // Lower baseplate
+          max: { x: 30, y: 4.5, z: 30 },     // Lower baseplate
           weight: 1,
         }
       ],

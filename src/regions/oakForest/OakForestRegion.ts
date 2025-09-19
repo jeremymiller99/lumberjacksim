@@ -78,8 +78,8 @@ export default class OakForestRegion extends GameRegion {
       ],
       spawnRegions: [
         {
-          min: { x: -30, y: 1, z: -30 },   // Cover most of 64x64 map
-          max: { x: 30, y: 5, z: 30 },     // Leave small border, reasonable height
+          min: { x: -30, y: 0.5, z: -30 },   // Cover most of 64x64 map, lower baseplate
+          max: { x: 30, y: 4.5, z: 30 },     // Leave small border, reasonable height, lower baseplate
           weight: 1,
         }
       ],
