@@ -9,6 +9,10 @@ import StrawHatItem from '../../../items/wearables/StrawHatItem';
 import GlassesItem from '../../../items/wearables/GlassesItem';
 import HytopiaGlassesItem from '../../../items/wearables/HytopiaGlassesItem';
 import GoldArmorCapeItem from '../../../items/wearables/GoldArmorCapeItem';
+import OakLogItem from '../../../items/materials/OakLogItem';
+import SnowLogItem from '../../../items/materials/SnowLogItem';
+import PalmLogItem from '../../../items/materials/PalmLogItem';
+import CursedLogItem from '../../../items/materials/CursedLogItem';
 
 export default class GeneralMerchantEntity extends BaseMerchantEntity {
   public constructor(options?: Partial<BaseMerchantEntityOptions>) {
@@ -17,6 +21,12 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
         // Basic starter tools
         RustyAxeItem,           // 25 gold - starter axe
         
+        // Buy/sell wood (sellables will appear in sell menu regardless)
+        OakLogItem,
+        SnowLogItem,
+        PalmLogItem,
+        CursedLogItem,
+
         // Hub specialty wearables  
         StrawHatItem,           // 50 gold - bee repellent hat
         GlassesItem,            // 80 gold - basic eyewear

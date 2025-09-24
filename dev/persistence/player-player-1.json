@@ -44,5 +44,6 @@
   "hotbarSelectedIndex": 0,
   "currency": 5000,
   "ownsHouse": true,
-  "houseLevel": 3
+  "houseLevel": 3,
+  "lastHouseVisitMs": 1758748077098
 }

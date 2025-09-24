@@ -3,6 +3,12 @@ import GameManager from '../../GameManager';
 import PortalEntity from '../../entities/PortalEntity';
 import { Player } from 'hytopia';
 import BarrierGroup from '../../entities/BarrierGroup';
+import AfkTreeEntity from '../../entities/afk/AfkTreeEntity';
+import AfkChestEntity from '../../entities/afk/AfkChestEntity';
+import OakLogItem from '../../items/materials/OakLogItem';
+import PalmLogItem from '../../items/materials/PalmLogItem';
+import SnowLogItem from '../../items/materials/SnowLogItem';
+import CursedLogItem from '../../items/materials/CursedLogItem';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const houseMap = require('../../../assets/maps/HouseMap.json');
@@ -46,6 +52,8 @@ export default class PlayerHouseRegion extends GameRegion {
     });
 
     portal.spawn(this.world, { x: 15, y: 1, z: 0.5 });
+
+    this._setupAfkFarming();
   }
 
   protected override onPlayerJoin(player: Player): void {
@@ -58,6 +66,98 @@ export default class PlayerHouseRegion extends GameRegion {
     const gp = GamePlayer.getOrCreate(player);
     this._syncLevel2Barriers(gp.houseLevel);
     this._syncLevel3Barrier(gp.houseLevel);
+
+    // Offline catch-up: compute elapsed time and prefill chests proportionally
+    try {
+      const persisted: any = (gp as any).player.getPersistedData?.() ?? {};
+      const nowMs = Date.now();
+      const lastHouseVisitMs = persisted.lastHouseVisitMs ?? nowMs;
+      const effectiveMs = Math.max(0, nowMs - lastHouseVisitMs);
+
+      // Find chests we spawned (by name suffix) and apply catch-up per linked tree slot
+      const entityManager: any = (this.world as any).entityManager;
+      const spawnedChests: AfkChestEntity[] = [];
+      const spawnedTrees: AfkTreeEntity[] = [];
+      if (entityManager?.entities) {
+        for (const entity of entityManager.entities.values()) {
+          if (entity instanceof AfkChestEntity) spawnedChests.push(entity);
+          if (entity instanceof AfkTreeEntity) spawnedTrees.push(entity);
+        }
+      }
+
+      // Sort by Z to align with our creation order (left->right)
+      spawnedChests.sort((a, b) => a.position.z - b.position.z);
+      spawnedTrees.sort((a, b) => a.position.z - b.position.z);
+
+      for (let i = 0; i < Math.min(spawnedChests.length, spawnedTrees.length); i++) {
+        const chest = spawnedChests[i];
+        const tree = spawnedTrees[i];
+        const cycles = Math.floor(effectiveMs / tree.growthDurationMs);
+        if (cycles <= 0) continue;
+
+        // Deterministic yields per spec
+        // Map by item id: oak -> 3, snow -> 2, palm -> 2, cursed(dead) -> 1
+        const id = (tree.yieldItem as any).id as string;
+        const perCycle = id === 'oak_log' ? 3 : id === 'snow_log' ? 2 : id === 'palm_log' ? 2 : 1;
+        const totalYield = Math.min(chest.capacity, Math.floor(cycles * perCycle));
+        chest.add(totalYield);
+      }
+
+      // Save updated timestamp immediately
+      const newPersisted = { ...(persisted || {}), lastHouseVisitMs: nowMs };
+      (gp as any).player.setPersistedData?.({ ...(gp as any)._serialize?.() ?? {}, ...newPersisted });
+    } catch {}
+  }
+
+  private _setupAfkFarming(): void {
+    // Positions sourced from HouseMap.json entities for chests and trees
+    // Chests at z: 4.5, 1.5, -0.5, -3.5 around x ~ -10.525, y ~ 1.4
+    const chestPositions = [
+      { x: -10.525000008940697, y: 1.4000000052154065, z: 4.500000002607703 },
+      { x: -10.525000008940697, y: 1.4000000052154065, z: 1.5000000026077032 },
+      { x: -10.525000008940697, y: 1.4000000052154065, z: -0.49999999739229684 },
+      { x: -10.525000008940697, y: 1.4000000052154065, z: -3.4999999973922966 },
+    ];
+
+    // Left-to-right (by z): oak, snow, palm, dead
+    const treeData = [
+      { pos: { x: -11.524137371185104, y: 2.6500000000000012, z: 4.493749021909581 }, modelUri: 'models/environment/oak-tree-big.gltf', item: OakLogItem, growthMs: 12000, yield: 3 },
+      { pos: { x: -11.524137371185104, y: 2.5368411636009824, z: 1.5480916005215205 }, modelUri: 'models/environment/snowy-fir-tree-big.gltf', item: SnowLogItem, growthMs: 16000, yield: 2 },
+      { pos: { x: -11.524137371185104, y: 2.5368411636009824, z: -0.5480916005215205 }, modelUri: 'models/environment/palm-1.gltf', item: PalmLogItem, growthMs: 20000, yield: 2 },
+      { pos: { x: -11.372523403815045, y: 2.3267373674781755, z: -3.3060530512396302 }, modelUri: 'models/environment/dead-tree-big.gltf', item: CursedLogItem, growthMs: 30000, yield: 1 },
+    ];
+
+    // Spawn chests first (labels derive from itemClass.displayName)
+    const chests: AfkChestEntity[] = chestPositions.map((p, index) => {
+      const assignedItemClass = (treeData[index]?.item) ?? OakLogItem;
+      const chest = new AfkChestEntity({
+        itemClass: assignedItemClass,
+        modelUri: 'models/environment/chest-blocky-wood.gltf',
+        modelScale: 1,
+        name: `${assignedItemClass.displayName} Chest`,
+        facingAngle: -90,
+        capacity: 100,
+      });
+      chest.spawn(this.world, p);
+      return chest;
+    });
+
+    // Pair each tree to the nearest chest (simple index mapping)
+    treeData.forEach((t, index) => {
+      const chest = chests[index % chests.length];
+      const tree = new AfkTreeEntity({
+        modelUri: t.modelUri,
+        minScale: 0.1,
+        maxScale: 0.3,
+        growthDurationMs: t.growthMs,
+        yieldItemClass: t.item,
+        yieldMin: t.yield,
+        yieldMax: t.yield,
+        name: 'AFK Tree',
+      });
+      tree.linkChest(chest);
+      tree.spawn(this.world, t.pos);
+    });
   }
 
   private _syncLevel2Barriers(houseLevel: number): void {
@@ -140,6 +240,21 @@ export default class PlayerHouseRegion extends GameRegion {
       try { this._level3Barrier.despawn(); } catch {}
       this._level3Barrier = undefined;
     }
+  }
+
+  protected override onPlayerLeave(player: Player): void {
+    super.onPlayerLeave(player);
+    if (player.id !== this.ownerPlayerId) return;
+
+    try {
+      // Stamp last house visit on leave
+      const GamePlayer = require('../../GamePlayer').default;
+      const gp = GamePlayer.getOrCreate(player);
+      const persisted: any = (gp as any).player.getPersistedData?.() ?? {};
+      const nowMs = Date.now();
+      const newPersisted = { ...(persisted || {}), lastHouseVisitMs: nowMs };
+      (gp as any).player.setPersistedData?.({ ...(gp as any)._serialize?.() ?? {}, ...newPersisted });
+    } catch {}
   }
 }
 

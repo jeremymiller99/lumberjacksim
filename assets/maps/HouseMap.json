@@ -1186,96 +1186,6 @@
     "-12,1,-4": 1
   },
   "entities": {
-    "-11.372523403815045,3.3267373674781755,-3.3060530512396302": {
-      "modelUri": "models/environment/dead-tree-big.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 0.4,
-      "name": "dead-tree-big",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0,
-          "w": 1
-        }
-      }
-    },
-    "-10.525000008940697,1.4000000052154065,4.500000002607703": {
-      "modelUri": "models/environment/chest-blocky-wood.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 1,
-      "name": "chest-blocky-wood",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0.7071067811865476,
-          "z": 0,
-          "w": 0.7071067811865476
-        }
-      }
-    },
-    "-10.525000008940697,1.4000000052154065,1.5000000026077032": {
-      "modelUri": "models/environment/chest-blocky-wood.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 1,
-      "name": "chest-blocky-wood",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0.7071067811865476,
-          "z": 0,
-          "w": 0.7071067811865476
-        }
-      }
-    },
-    "-10.525000008940697,1.4000000052154065,-0.49999999739229684": {
-      "modelUri": "models/environment/chest-blocky-wood.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 1,
-      "name": "chest-blocky-wood",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0.7071067811865476,
-          "z": 0,
-          "w": 0.7071067811865476
-        }
-      }
-    },
-    "-10.525000008940697,1.4000000052154065,-3.4999999973922966": {
-      "modelUri": "models/environment/chest-blocky-wood.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 1,
-      "name": "chest-blocky-wood",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0.7071067811865476,
-          "z": 0,
-          "w": 0.7071067811865476
-        }
-      }
-    },
     "0.5,1.5,6.5": {
       "modelUri": "models/environment/fence-wood-2.gltf",
       "modelPreferredShape": "trimesh",
@@ -2248,42 +2158,6 @@
         }
       }
     },
-    "-11.524137371185104,3.5368411636009824,4.493749021909581": {
-      "modelUri": "models/environment/snowy-fir-tree-big.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 0.4,
-      "name": "snowy-fir-tree-big",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0,
-          "w": 1
-        }
-      }
-    },
-    "-11.5,3.780612099596669,1.5": {
-      "modelUri": "models/environment/palm-1.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 0.4,
-      "name": "palm-1",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0,
-          "w": 1
-        }
-      }
-    },
     "-13.3125,1.5,-5.3125": {
       "modelUri": "models/environment/fence-corner-wood.gltf",
       "modelPreferredShape": "trimesh",
@@ -2641,24 +2515,6 @@
           "y": 1,
           "z": 0,
           "w": 6.123233995736766e-17
-        }
-      }
-    },
-    "-11.49675306937917,3.6500000000000012,-0.5480916005215205": {
-      "modelUri": "models/environment/oak-tree-big.gltf",
-      "modelPreferredShape": "trimesh",
-      "modelLoopedAnimations": [
-        "idle"
-      ],
-      "modelScale": 0.4,
-      "name": "oak-tree-big",
-      "rigidBodyOptions": {
-        "type": "fixed",
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0,
-          "w": 1
         }
       }
     }

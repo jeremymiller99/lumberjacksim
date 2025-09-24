@@ -4,7 +4,7 @@ import type GamePlayerEntity from '../../GamePlayerEntity';
 import RawLogItem from '../../items/materials/RawLogItem';
 import OakLogItem from '../../items/materials/OakLogItem';
 import PalmLogItem from '../../items/materials/PalmLogItem';
-import PineLogItem from '../../items/materials/PineLogItem';
+import SnowLogItem from '../../items/materials/SnowLogItem';
 import CursedLogItem from '../../items/materials/CursedLogItem';
 import BaseLumberToolItem from '../../items/BaseLumberToolItem';
 import MinigameManager from '../../systems/MinigameManager';
@@ -362,7 +362,7 @@ export default class ChoppableTreeEntity extends BaseForageableEntity {
         break;
       case 'snow':
       case 'pine':
-        logItemClass = PineLogItem;
+        logItemClass = SnowLogItem;
         break;
       case 'burnt':
       case 'cursed':
