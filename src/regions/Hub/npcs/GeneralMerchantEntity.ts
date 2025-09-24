@@ -53,6 +53,7 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
                     return;
                   }
                   interactor.gamePlayer.grantHouseOwnership();
+                  interactor.gamePlayer.setHouseLevel(1);
                   // Show success dialogue prompting to press F
                   interactor.player.ui.sendData({
                     type: 'dialogue',
@@ -60,6 +61,62 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
                     name: 'Merchant Hubbert',
                     title: 'Hub Trader',
                     text: 'House purchased! Press F to teleport to your house.',
+                    options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+                  });
+                },
+                dismiss: false,
+              },
+              {
+                text: `Upgrade House to Level 2 (30,000 gold)`,
+                isSelectable: (interactor) => interactor.gamePlayer.ownsHouse && interactor.gamePlayer.houseLevel === 1,
+                onSelect: (interactor) => {
+                  const cost = 30000;
+                  if (!interactor.adjustGold(-cost)) {
+                    interactor.player.ui.sendData({
+                      type: 'dialogue',
+                      avatarImageUri: 'avatars/merchant.png',
+                      name: 'Merchant Hubbert',
+                      title: 'Hub Trader',
+                      text: 'Not enough gold for level 2 house upgrade. You need 30,000 gold.',
+                      options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+                    });
+                    return;
+                  }
+                  interactor.gamePlayer.setHouseLevel(2);
+                  interactor.player.ui.sendData({
+                    type: 'dialogue',
+                    avatarImageUri: 'avatars/merchant.png',
+                    name: 'Merchant Hubbert',
+                    title: 'Hub Trader',
+                    text: 'Your house was upgraded to level 2! Upstairs and yard are now accessible.',
+                    options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+                  });
+                },
+                dismiss: false,
+              },
+              {
+                text: `Upgrade House to Level 3 (50,000 gold)`,
+                isSelectable: (interactor) => interactor.gamePlayer.ownsHouse && interactor.gamePlayer.houseLevel === 2,
+                onSelect: (interactor) => {
+                  const cost = 50000;
+                  if (!interactor.adjustGold(-cost)) {
+                    interactor.player.ui.sendData({
+                      type: 'dialogue',
+                      avatarImageUri: 'avatars/merchant.png',
+                      name: 'Merchant Hubbert',
+                      title: 'Hub Trader',
+                      text: 'Not enough gold for level 3 house upgrade. You need 50,000 gold.',
+                      options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+                    });
+                    return;
+                  }
+                  interactor.gamePlayer.setHouseLevel(3);
+                  interactor.player.ui.sendData({
+                    type: 'dialogue',
+                    avatarImageUri: 'avatars/merchant.png',
+                    name: 'Merchant Hubbert',
+                    title: 'Hub Trader',
+                    text: 'Your house was upgraded to level 3! New areas are now accessible.',
                     options: [ { text: 'Close', dismiss: true, pureExit: true } ]
                   });
                 },

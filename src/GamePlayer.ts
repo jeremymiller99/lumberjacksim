@@ -42,6 +42,7 @@ type SerializedGamePlayerData = {
   currentRegionSpawnFacingAngle: number | undefined;
   currentRegionSpawnPoint: Vector3Like | undefined;
   ownsHouse?: boolean;
+  houseLevel?: number;
   skillExperience: [SkillId, number][];
   backpack: SerializedItemInventoryData;
   hotbar: SerializedItemInventoryData;
@@ -74,6 +75,7 @@ export default class GamePlayer {
   private _health: number = 100;
   private _currency: number = 0;
   private _ownsHouse: boolean = false;
+  private _houseLevel: number = 0;
   private _isDead: boolean = false;
   private _saveTimeout: NodeJS.Timeout | undefined;
   private _skillExperience: Map<SkillId, number> = new Map();
@@ -166,6 +168,10 @@ export default class GamePlayer {
 
   public get ownsHouse(): boolean {
     return this._ownsHouse;
+  }
+
+  public get houseLevel(): number {
+    return this._houseLevel;
   }
 
   public getGoldAmount(): number {
@@ -395,9 +401,34 @@ export default class GamePlayer {
     if (!this._ownsHouse) {
       console.log(`[House] Granting house ownership to ${this.player.username} (${this.player.id})`);
       this._ownsHouse = true;
+      this._houseLevel = Math.max(1, this._houseLevel || 0);
       this.saveImmediate();
     } else {
       console.log(`[House] Player already owns a house: ${this.player.username} (${this.player.id})`);
+    }
+  }
+
+  public setHouseLevel(level: number): void {
+    if (!this._ownsHouse) return;
+    this._houseLevel = Math.max(1, Math.min(4, level));
+    this.saveImmediate();
+    // If player is in their house world, rebuild the region instantly
+    if (this._currentRegion && this._currentRegion.id.startsWith('house:')) {
+      try {
+        // Sync barrier state without full rebuild if possible
+        const PlayerHouseRegion = require('./regions/house/PlayerHouseRegion').default;
+        if (this._currentRegion instanceof PlayerHouseRegion) {
+          // Call the region's internal sync via rejoin trick (forces onPlayerJoin, which syncs barriers)
+          const region = this._currentRegion;
+          this.joinRegion(region, region.spawnFacingAngle, this._currentEntity ? this._currentEntity.position : region.spawnPoint);
+        } else {
+          const gm = require('./GameManager').default.instance as import('./GameManager').default;
+          const newRegion = gm.rebuildPlayerHouseRegion(this.player.id, this.player.username);
+          this.joinRegion(newRegion, newRegion.spawnFacingAngle, newRegion.spawnPoint);
+        }
+      } catch (e) {
+        console.error('Failed to rebuild house region:', e);
+      }
     }
   }
 
@@ -538,6 +569,7 @@ export default class GamePlayer {
       this._health = playerData.health;
       this._currency = playerData.currency ?? 0; // Default to 0 for backward compatibility
       this._ownsHouse = playerData.ownsHouse ?? false;
+      this._houseLevel = playerData.houseLevel ?? (this._ownsHouse ? 1 : 0);
       this._isDead = this._health <= 0;
       
       // Restore current region if available
@@ -761,6 +793,7 @@ export default class GamePlayer {
       currentRegionSpawnFacingAngle: this._currentRegionSpawnFacingAngle,
       currentRegionSpawnPoint: this._currentRegionSpawnPoint,
       ownsHouse: this._ownsHouse,
+      houseLevel: this._houseLevel,
       skillExperience: Array.from(this._skillExperience.entries()),
       backpack: this.backpack.serialize(),
       hotbar: this.hotbar.serialize(),
@@ -914,6 +947,7 @@ export default class GamePlayer {
     this._currency = 0; // Start with 0 gold
     // Ensure new players do not own a house by default
     this._ownsHouse = false;
+    this._houseLevel = 0;
     
     // Give new players a starting rusty axe
     import('./items/axes/RustyAxeItem').then(({ default: RustyAxeItem }) => {

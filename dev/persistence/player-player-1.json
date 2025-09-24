@@ -43,5 +43,6 @@
   },
   "hotbarSelectedIndex": 0,
   "currency": 5000,
-  "ownsHouse": true
+  "ownsHouse": true,
+  "houseLevel": 3
 }

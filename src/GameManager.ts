@@ -43,6 +43,21 @@ export default class GameManager {
     return region;
   }
 
+  public rebuildPlayerHouseRegion(ownerPlayerId: string, ownerPlayerName: string): PlayerHouseRegion {
+    const oldRegion = this._playerHouseRegions.get(ownerPlayerId);
+    if (oldRegion) {
+      try {
+        GameClock.instance.removeRegionClockCycle(oldRegion);
+        oldRegion.world.stop();
+      } catch {}
+      this._regions.delete(oldRegion.id);
+      this._playerHouseRegions.delete(ownerPlayerId);
+      console.log(`GameManager: Rebuilding house region for player ${ownerPlayerId} (${ownerPlayerName})`);
+    }
+
+    return this.getOrCreatePlayerHouseRegion(ownerPlayerId, ownerPlayerName);
+  }
+
   public async loadItems(): Promise<void> {
     console.log('Loading minimal lumber items...');
     await this.loadLumberItems();

@@ -58,5 +58,6 @@
     "y": 2,
     "z": 5
   },
-  "ownsHouse": true
+  "ownsHouse": true,
+  "houseLevel": 1
 }
