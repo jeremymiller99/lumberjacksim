@@ -377,7 +377,7 @@ export default class GamePlayer {
   public teleportToHouse(): void {
     console.log(`[House] teleportToHouse() called for ${this.player.username} (${this.player.id}), ownsHouse=${this._ownsHouse}`);
     if (!this._ownsHouse) {
-      this.showNotification('You do not own a house.', 'error');
+      this.showNotification('House not available yet, speak to merchant in hub store', 'error');
       console.log('[House] abort: player does not own a house');
       return;
     }
@@ -912,6 +912,8 @@ export default class GamePlayer {
   private _setupNewPlayer(): void {
     // Give new players starting currency
     this._currency = 0; // Start with 0 gold
+    // Ensure new players do not own a house by default
+    this._ownsHouse = false;
     
     // Give new players a starting rusty axe
     import('./items/axes/RustyAxeItem').then(({ default: RustyAxeItem }) => {
@@ -923,5 +925,8 @@ export default class GamePlayer {
       this.questLog.startQuest(FirstChopQuest);
       this.showNotification('Welcome to the lumber business! Check your quest log to get started.', 'success');
     });
+
+    // Persist initial state
+    this.saveImmediate();
   }
 }

@@ -31,6 +31,44 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
       name: 'Merchant Hubbert',
       additionalDialogueOptions: [
         {
+          text: `Buy upgrades.`,
+          nextDialogue: {
+            text: `Upgrades available:`,
+            options: [
+              {
+                text: `Buy House (20,000 gold)` ,
+                isSelectable: (interactor) => !interactor.gamePlayer.ownsHouse,
+                onSelect: (interactor) => {
+                  const cost = 20000;
+                  if (!interactor.adjustGold(-cost)) {
+                    // Show a dialogue message instead of closing UI abruptly
+                    interactor.player.ui.sendData({
+                      type: 'dialogue',
+                      avatarImageUri: 'avatars/merchant.png',
+                      name: 'Merchant Hubbert',
+                      title: 'Hub Trader',
+                      text: 'Not enough gold for house upgrade. You need 20,000 gold.',
+                      options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+                    });
+                    return;
+                  }
+                  interactor.gamePlayer.grantHouseOwnership();
+                  // Show success dialogue prompting to press F
+                  interactor.player.ui.sendData({
+                    type: 'dialogue',
+                    avatarImageUri: 'avatars/merchant.png',
+                    name: 'Merchant Hubbert',
+                    title: 'Hub Trader',
+                    text: 'House purchased! Press F to teleport to your house.',
+                    options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+                  });
+                },
+                dismiss: false,
+              },
+            ],
+          },
+        },
+        {
           text: `Tell me about this place.`,
           nextDialogue: {
             text: `Welcome to the Hub! This is the central trading post where adventurers from all regions come to trade. I specialize in stylish accessories and premium wearables. For specialized lumber tools, visit the merchants in other regions.`,

@@ -116,9 +116,7 @@ export default class GameManager {
   }
 
   private _selectWorldForPlayer = async (player: Player): Promise<World | undefined> => {
-    const gp = GamePlayer.getOrCreate(player);
-    // Testing: grant a house to every joining player
-    gp.grantHouseOwnership();
+    GamePlayer.getOrCreate(player);
     // Always start players in the configured start region (hub)
     return this._startRegion.world;
   }
