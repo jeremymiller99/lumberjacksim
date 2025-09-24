@@ -6,9 +6,11 @@ import {
   Entity,
   ErrorHandler,
   ModelEntityOptions,
+  QuaternionLike,
   RigidBodyType,
   SceneUI,
-  Vector3Like
+  Vector3Like,
+  World,
 } from 'hytopia';
 
 import type GameRegion from '../GameRegion';
@@ -20,7 +22,7 @@ export type PortalEntityOptions = {
   destinationRegion: GameRegion;
   destinationRegionFacingAngle?: number;
   destinationRegionPosition: Vector3Like;
-  type?: 'normal' | 'boss';
+  type?: 'normal' | 'boss' | 'invisible';
   label?: string;
   requiredLevel?: number;
 } & ModelEntityOptions;
@@ -34,26 +36,41 @@ export default class PortalEntity extends Entity {
   private readonly _playerTimeouts = new Map<GamePlayerEntity, NodeJS.Timeout>();
   private _labelSceneUI: SceneUI | undefined;
   private _baseLabel: string;
+  private _isInvisible: boolean = false;
 
   public constructor(options: PortalEntityOptions) {
+    const isInvisible = options.type === 'invisible';
+    const invisibleZOffset = isInvisible ? 0.5 : 0;
     const modelUri = options.modelUri ?? 'models/misc/selection-indicator.gltf';
-    const colliderOptions = Collider.optionsFromModelUri(modelUri, options.modelScale ?? 1, ColliderShape.BLOCK) as BlockColliderOptions;
-    colliderOptions.halfExtents!.x = Math.max(colliderOptions.halfExtents!.x, 0.5);
+    const modelScale = options.modelScale ?? (isInvisible ? 0.0001 : 2);
+    // Compute collider as a 1x1 square footprint for invisible portals (with 2m height), otherwise from model
+    let colliderShape = ColliderShape.BLOCK;
+    let colliderHalfExtents = { x: 0.5, y: 1, z: 0.5 };
+    if (!isInvisible) {
+      const derived = Collider.optionsFromModelUri(modelUri, modelScale, ColliderShape.BLOCK) as BlockColliderOptions;
+      derived.halfExtents!.x = Math.max(derived.halfExtents!.x, 0.5);
+      derived.halfExtents!.y = Math.max(derived.halfExtents!.y, 1);
+      derived.halfExtents!.z = Math.max(derived.halfExtents!.z, 0.5);
+      colliderShape = derived.shape;
+      colliderHalfExtents = derived.halfExtents!;
+    }
 
     super({
-      modelScale: options.modelScale ?? 2,
+      modelScale,
       modelUri,
       modelLoopedAnimations: [ 'idle' ],
       rigidBodyOptions: {
         type: RigidBodyType.FIXED,
         colliders: [
           {
-            ...colliderOptions,
+            shape: colliderShape,
+            halfExtents: colliderHalfExtents,
             collisionGroups: {
               belongsTo: [ CollisionGroup.ALL ],
               collidesWith: [ CollisionGroup.PLAYER ],
             },
             isSensor: true,
+            relativePosition: { x: 0, y: 0, z: invisibleZOffset },
             onCollision: (other, started) => {
               if (!(other instanceof GamePlayerEntity)) return;
 
@@ -82,6 +99,7 @@ export default class PortalEntity extends Entity {
       ...options,
     });
 
+    this._isInvisible = isInvisible;
     this.delayS = options.delayS ?? 0;
     this.destinationRegion = options.destinationRegion;
     this.destinationRegionFacingAngle = options.destinationRegionFacingAngle ?? 0;
@@ -95,8 +113,8 @@ export default class PortalEntity extends Entity {
     }
   }
 
-  public override spawn(...args: any[]): void {
-    super.spawn(...args);
+  public override spawn(world: World, position: Vector3Like, rotation?: QuaternionLike): void {
+    super.spawn(world, position, rotation);
     
     // Load the label UI after spawning
     if (this._labelSceneUI && this.world) {
@@ -105,9 +123,11 @@ export default class PortalEntity extends Entity {
   }
 
   private _setupLabelUI(text: string): void {
+    const yOffset = this._isInvisible ? 1.2 : (this.height / 2 + 1.5);
+    const zOffset = this._isInvisible ? -0.05 : 0;
     this._labelSceneUI = new SceneUI({
       attachedToEntity: this,
-      offset: { x: 0, y: this.height / 2 + 1.5, z: 0 },
+      offset: { x: 0, y: yOffset, z: zOffset },
       templateId: 'portal-text',
       viewDistance: 15,
       state: {

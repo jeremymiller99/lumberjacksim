@@ -41,6 +41,7 @@ type SerializedGamePlayerData = {
   currentRegionId: string | undefined;
   currentRegionSpawnFacingAngle: number | undefined;
   currentRegionSpawnPoint: Vector3Like | undefined;
+  ownsHouse?: boolean;
   skillExperience: [SkillId, number][];
   backpack: SerializedItemInventoryData;
   hotbar: SerializedItemInventoryData;
@@ -72,6 +73,7 @@ export default class GamePlayer {
   private _globalExperience: number = 0;
   private _health: number = 100;
   private _currency: number = 0;
+  private _ownsHouse: boolean = false;
   private _isDead: boolean = false;
   private _saveTimeout: NodeJS.Timeout | undefined;
   private _skillExperience: Map<SkillId, number> = new Map();
@@ -160,6 +162,10 @@ export default class GamePlayer {
 
   public get currency(): number {
     return this._currency;
+  }
+
+  public get ownsHouse(): boolean {
+    return this._ownsHouse;
   }
 
   public getGoldAmount(): number {
@@ -353,16 +359,46 @@ export default class GamePlayer {
 
 
   public joinRegion(region: GameRegion, facingAngle: number, spawnPoint: Vector3Like): void {
+    console.log(`[Region] joinRegion start: ${region.id} (${region.name}) for ${this.player.username}`);
     this.setCurrentRegion(region);
     this.setCurrentRegionSpawnFacingAngle(facingAngle);
     this.setCurrentRegionSpawnPoint(spawnPoint);              
     this.saveImmediate(); // Use immediate save to prevent race conditions during region transitions
     this.player.joinWorld(region.world);
+    console.log('[Region] player.joinWorld called');
     
     // Update portal labels when entering a region
     setTimeout(() => {
       this._updatePortalLabels();
+      console.log('[Region] _updatePortalLabels dispatched');
     }, 1000); // Delay to ensure entities are loaded
+  }
+
+  public teleportToHouse(): void {
+    console.log(`[House] teleportToHouse() called for ${this.player.username} (${this.player.id}), ownsHouse=${this._ownsHouse}`);
+    if (!this._ownsHouse) {
+      this.showNotification('You do not own a house.', 'error');
+      console.log('[House] abort: player does not own a house');
+      return;
+    }
+
+    const GameManagerModule = GameManager; // avoid circular import confusion for TS
+    console.log('[House] requesting or creating player house region');
+    const houseRegion = GameManagerModule.instance.getOrCreatePlayerHouseRegion(this.player.id, this.player.username);
+    console.log(`[House] got region ${houseRegion.id} (${houseRegion.name})`);
+    this.joinRegion(houseRegion, houseRegion.spawnFacingAngle, houseRegion.spawnPoint);
+    console.log('[House] joinRegion() invoked for house');
+    this.showNotification('Teleported to your house.', 'success');
+  }
+
+  public grantHouseOwnership(): void {
+    if (!this._ownsHouse) {
+      console.log(`[House] Granting house ownership to ${this.player.username} (${this.player.id})`);
+      this._ownsHouse = true;
+      this.saveImmediate();
+    } else {
+      console.log(`[House] Player already owns a house: ${this.player.username} (${this.player.id})`);
+    }
   }
 
   public load(): void {
@@ -501,6 +537,7 @@ export default class GamePlayer {
       this._globalExperience = playerData.skillExperience.reduce((acc, [, experience]) => acc + experience, 0);
       this._health = playerData.health;
       this._currency = playerData.currency ?? 0; // Default to 0 for backward compatibility
+      this._ownsHouse = playerData.ownsHouse ?? false;
       this._isDead = this._health <= 0;
       
       // Restore current region if available
@@ -723,6 +760,7 @@ export default class GamePlayer {
       currentRegionId: this._currentRegion?.id,
       currentRegionSpawnFacingAngle: this._currentRegionSpawnFacingAngle,
       currentRegionSpawnPoint: this._currentRegionSpawnPoint,
+      ownsHouse: this._ownsHouse,
       skillExperience: Array.from(this._skillExperience.entries()),
       backpack: this.backpack.serialize(),
       hotbar: this.hotbar.serialize(),
@@ -788,14 +826,16 @@ export default class GamePlayer {
     // Update portal labels in the current region when player levels up
     if (!this._currentRegion || !this._currentEntity || !this._currentRegion.world) return;
     
-    // Check if world.entities exists and is an array
-    if (!this._currentRegion.world.entities || !Array.isArray(this._currentRegion.world.entities)) {
+    // Access entities via any to avoid typing issues if not exposed on World type
+    const worldAny = this._currentRegion.world as any;
+    const entities: any[] = Array.isArray(worldAny?.entities) ? worldAny.entities : [];
+    if (entities.length === 0) {
       console.log('World entities not available yet, skipping portal label update');
       return;
     }
     
     // Find all portals in the current region and update their labels
-    const portals = this._currentRegion.world.entities.filter(entity => entity && entity.constructor.name === 'PortalEntity');
+    const portals = entities.filter(entity => entity && entity.constructor?.name === 'PortalEntity');
     console.log(`Found ${portals.length} portals to update`);
     
     for (const portal of portals) {
