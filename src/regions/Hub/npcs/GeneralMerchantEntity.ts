@@ -1,4 +1,5 @@
 import BaseMerchantEntity from '../../../entities/BaseMerchantEntity';
+import GameManager from '../../../GameManager';
 import type { BaseMerchantEntityOptions } from '../../../entities/BaseMerchantEntity';
 
 // Basic tools
@@ -40,6 +41,30 @@ export default class GeneralMerchantEntity extends BaseMerchantEntity {
       modelScale: 0.75,
       name: 'Merchant Hubbert',
       additionalDialogueOptions: [
+        {
+          text: `Buy Oak Farm Upgrade (2,000 gold)` ,
+          isSelectable: (interactor) => interactor.gamePlayer.ownsHouse && interactor.gamePlayer.houseLevel >= 2 && !interactor.gamePlayer.farmOakUnlocked,
+          onSelect: (interactor) => {
+            const cost = 2000;
+            if (!interactor.adjustGold(-cost)) {
+              interactor.player.ui.sendData({
+                type: 'dialogue',
+                avatarImageUri: 'avatars/merchant.png',
+                name: 'Merchant Hubbert',
+                title: 'Hub Trader',
+                text: 'Not enough gold for Oak Farm upgrade. You need 2,000 gold.',
+                options: [ { text: 'Close', dismiss: true, pureExit: true } ]
+              });
+              return;
+            }
+            interactor.gamePlayer.unlockOakFarm();
+            interactor.showNotification('Oak Farm unlocked at your house!', 'success');
+            // If house region exists, sync immediately
+            const houseRegion = GameManager.instance.getOrCreatePlayerHouseRegion(interactor.gamePlayer.player.id, interactor.gamePlayer.player.username);
+            houseRegion.syncAfkFarming(interactor.gamePlayer);
+          },
+          dismiss: false,
+        },
         {
           text: `Buy upgrades.`,
           nextDialogue: {

@@ -19,6 +19,23 @@ export default class DesertMerchantEntity extends BaseMerchantEntity {
       name: 'Axe Merchant Sahara',
       additionalDialogueOptions: [
         {
+          text: `Buy Palm Farm Upgrade (7,500 gold)` ,
+          isSelectable: (interactor) => interactor.gamePlayer.ownsHouse && interactor.gamePlayer.houseLevel >= 2 && !interactor.gamePlayer.farmPalmUnlocked,
+          onSelect: (interactor) => {
+            const cost = 7500;
+            if (!interactor.adjustGold(-cost)) {
+              interactor.showNotification('Not enough gold for Palm Farm upgrade. (7,500)', 'error');
+              return;
+            }
+            interactor.gamePlayer.unlockPalmFarm();
+            interactor.showNotification('Palm Farm unlocked at your house!', 'success');
+            const GameManager = require('../../../GameManager').default;
+            const houseRegion = GameManager.instance.getOrCreatePlayerHouseRegion(interactor.gamePlayer.player.id, interactor.gamePlayer.player.username);
+            houseRegion.syncAfkFarming(interactor.gamePlayer);
+          },
+          dismiss: false,
+        },
+        {
           text: `Why do you trade in the desert?`,
           nextDialogue: {
             text: `The desert may be harsh, but it's rich with opportunities! Palm trees here grow strong and tough, requiring quality axes to harvest. I specialize in providing the best lumber tools for desert conditions.`,

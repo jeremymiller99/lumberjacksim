@@ -19,6 +19,23 @@ export default class WinterMerchantEntity extends BaseMerchantEntity {
       name: 'Axe Merchant Frost',
       additionalDialogueOptions: [
         {
+          text: `Buy Snow Farm Upgrade (5,000 gold)` ,
+          isSelectable: (interactor) => interactor.gamePlayer.ownsHouse && interactor.gamePlayer.houseLevel >= 2 && !interactor.gamePlayer.farmSnowUnlocked,
+          onSelect: (interactor) => {
+            const cost = 5000;
+            if (!interactor.adjustGold(-cost)) {
+              interactor.showNotification('Not enough gold for Snow Farm upgrade. (5,000)', 'error');
+              return;
+            }
+            interactor.gamePlayer.unlockSnowFarm();
+            interactor.showNotification('Snow Farm unlocked at your house!', 'success');
+            const GameManager = require('../../../GameManager').default;
+            const houseRegion = GameManager.instance.getOrCreatePlayerHouseRegion(interactor.gamePlayer.player.id, interactor.gamePlayer.player.username);
+            houseRegion.syncAfkFarming(interactor.gamePlayer);
+          },
+          dismiss: false,
+        },
+        {
           text: `How do you survive in this cold?`,
           nextDialogue: {
             text: `Years of experience, friend! The cold doesn't bother me anymore. I specialize in axes perfect for winter conditions - frozen wood is tough, so you need quality tools. My axes are tested in these very frozen lands!`,

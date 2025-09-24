@@ -50,6 +50,11 @@ type SerializedGamePlayerData = {
   questLog: SerializedQuestLogData;
   storage: SerializedItemInventoryData;
   wearables: SerializedItemInventoryData;
+  // House farm unlock flags
+  farmOakUnlocked?: boolean;
+  farmSnowUnlocked?: boolean;
+  farmPalmUnlocked?: boolean;
+  farmCursedUnlocked?: boolean;
 }
 
 export default class GamePlayer {
@@ -79,6 +84,11 @@ export default class GamePlayer {
   private _isDead: boolean = false;
   private _saveTimeout: NodeJS.Timeout | undefined;
   private _skillExperience: Map<SkillId, number> = new Map();
+  // Farm unlocks
+  private _farmOakUnlocked: boolean = false;
+  private _farmSnowUnlocked: boolean = false;
+  private _farmPalmUnlocked: boolean = false;
+  private _farmCursedUnlocked: boolean = false;
 
   private constructor(player: Player) {
     this.eventRouter = new EventRouter();
@@ -595,6 +605,12 @@ export default class GamePlayer {
       const storageSuccess = this.storage.loadFromSerializedData(playerData.storage);
       const wearablesSuccess = this.wearables.loadFromSerializedData(playerData.wearables || { items: [] });
       
+      // Restore farm unlocks (default false)
+      this._farmOakUnlocked = !!playerData.farmOakUnlocked;
+      this._farmSnowUnlocked = !!playerData.farmSnowUnlocked;
+      this._farmPalmUnlocked = !!playerData.farmPalmUnlocked;
+      this._farmCursedUnlocked = !!playerData.farmCursedUnlocked;
+
       // Restore hotbar selected index (default to 0 for backward compatibility)
       const selectedIndex = playerData.hotbarSelectedIndex ?? 0;
       this.hotbar.setSelectedIndex(selectedIndex);
@@ -801,6 +817,10 @@ export default class GamePlayer {
       questLog: this.questLog.serialize(),
       storage: this.storage.serialize(),
       wearables: this.wearables.serialize(),
+      farmOakUnlocked: this._farmOakUnlocked,
+      farmSnowUnlocked: this._farmSnowUnlocked,
+      farmPalmUnlocked: this._farmPalmUnlocked,
+      farmCursedUnlocked: this._farmCursedUnlocked,
     };
     
     return playerData;
@@ -847,6 +867,18 @@ export default class GamePlayer {
     // Always log current currency for debugging
     console.log(`Player currency after migration: ${this._currency}`);
   }
+
+  // Farm unlock getters
+  public get farmOakUnlocked(): boolean { return this._farmOakUnlocked; }
+  public get farmSnowUnlocked(): boolean { return this._farmSnowUnlocked; }
+  public get farmPalmUnlocked(): boolean { return this._farmPalmUnlocked; }
+  public get farmCursedUnlocked(): boolean { return this._farmCursedUnlocked; }
+
+  // Unlock actions
+  public unlockOakFarm(): void { this._farmOakUnlocked = true; this.saveImmediate(); }
+  public unlockSnowFarm(): void { this._farmSnowUnlocked = true; this.saveImmediate(); }
+  public unlockPalmFarm(): void { this._farmPalmUnlocked = true; this.saveImmediate(); }
+  public unlockCursedFarm(): void { this._farmCursedUnlocked = true; this.saveImmediate(); }
 
   private _updateEntityAlertsSceneUIs(): void {
     this.player.ui.sendData({

@@ -17,6 +17,8 @@ export default class PlayerHouseRegion extends GameRegion {
   public readonly ownerPlayerId: string;
   private _level2Barriers: BarrierGroup[] = [];
   private _level3Barrier: BarrierGroup | undefined;
+  private _spawnedFarmIds: Set<string> = new Set();
+  // No persistent flag; we sync AFK farm idempotently on events
 
   public constructor(ownerPlayerId: string, ownerPlayerName: string) {
     super({
@@ -52,8 +54,6 @@ export default class PlayerHouseRegion extends GameRegion {
     });
 
     portal.spawn(this.world, { x: 15, y: 1, z: 0.5 });
-
-    this._setupAfkFarming();
   }
 
   protected override onPlayerJoin(player: Player): void {
@@ -67,6 +67,9 @@ export default class PlayerHouseRegion extends GameRegion {
     this._syncLevel2Barriers(gp.houseLevel);
     this._syncLevel3Barrier(gp.houseLevel);
 
+    // Ensure AFK farm is synced after owner joins (uses real player context)
+    this.syncAfkFarming(gp);
+
     // Offline catch-up: compute elapsed time and prefill chests proportionally
     try {
       const persisted: any = (gp as any).player.getPersistedData?.() ?? {};
@@ -74,7 +77,7 @@ export default class PlayerHouseRegion extends GameRegion {
       const lastHouseVisitMs = persisted.lastHouseVisitMs ?? nowMs;
       const effectiveMs = Math.max(0, nowMs - lastHouseVisitMs);
 
-      // Find chests we spawned (by name suffix) and apply catch-up per linked tree slot
+      // Find spawned entities and apply catch-up per linked tree slot
       const entityManager: any = (this.world as any).entityManager;
       const spawnedChests: AfkChestEntity[] = [];
       const spawnedTrees: AfkTreeEntity[] = [];
@@ -96,7 +99,6 @@ export default class PlayerHouseRegion extends GameRegion {
         if (cycles <= 0) continue;
 
         // Deterministic yields per spec
-        // Map by item id: oak -> 3, snow -> 2, palm -> 2, cursed(dead) -> 1
         const id = (tree.yieldItem as any).id as string;
         const perCycle = id === 'oak_log' ? 3 : id === 'snow_log' ? 2 : id === 'palm_log' ? 2 : 1;
         const totalYield = Math.min(chest.capacity, Math.floor(cycles * perCycle));
@@ -109,7 +111,7 @@ export default class PlayerHouseRegion extends GameRegion {
     } catch {}
   }
 
-  private _setupAfkFarming(): void {
+  public syncAfkFarming(gp: any): void {
     // Positions sourced from HouseMap.json entities for chests and trees
     // Chests at z: 4.5, 1.5, -0.5, -3.5 around x ~ -10.525, y ~ 1.4
     const chestPositions = [
@@ -128,35 +130,86 @@ export default class PlayerHouseRegion extends GameRegion {
     ];
 
     // Spawn chests first (labels derive from itemClass.displayName)
-    const chests: AfkChestEntity[] = chestPositions.map((p, index) => {
-      const assignedItemClass = (treeData[index]?.item) ?? OakLogItem;
-      const chest = new AfkChestEntity({
-        itemClass: assignedItemClass,
-        modelUri: 'models/environment/chest-blocky-wood.gltf',
-        modelScale: 1,
-        name: `${assignedItemClass.displayName} Chest`,
-        facingAngle: -90,
-        capacity: 100,
-      });
-      chest.spawn(this.world, p);
-      return chest;
+    const unlocks = {
+      oak: gp.farmOakUnlocked && gp.houseLevel >= 2,
+      snow: gp.farmSnowUnlocked && gp.houseLevel >= 2,
+      palm: gp.farmPalmUnlocked && gp.houseLevel >= 2,
+      cursed: gp.farmCursedUnlocked && gp.houseLevel >= 2,
+    };
+
+    // Gather existing entities to avoid duplicates
+    const entityManager: any = (this.world as any).entityManager;
+    const existingChests: AfkChestEntity[] = [];
+    const existingTrees: AfkTreeEntity[] = [];
+    if (entityManager?.entities) {
+      for (const entity of entityManager.entities.values()) {
+        if (entity instanceof AfkChestEntity) existingChests.push(entity);
+        if (entity instanceof AfkTreeEntity) existingTrees.push(entity);
+      }
+    }
+
+    // Build maps for quick lookup
+    const existingChestIds = new Set(existingChests.map(c => (c as any).itemClass?.id));
+    const existingTreeIds = new Set(existingTrees.map(t => (t as any).yieldItem?.id));
+    // Seed spawned set from current world state
+    existingTreeIds.forEach(id => { if (id) this._spawnedFarmIds.add(id as string); });
+
+    // Ensure chests exist for unlocked types
+    const chests: AfkChestEntity[] = [];
+    treeData.forEach((data, index) => {
+      const item = data.item;
+      const isUnlocked =
+        (item.id === 'oak_log' && unlocks.oak) ||
+        (item.id === 'snow_log' && unlocks.snow) ||
+        (item.id === 'palm_log' && unlocks.palm) ||
+        (item.id === 'cursed_log' && unlocks.cursed);
+      if (!isUnlocked) return;
+
+      let chest = existingChests.find(c => (c as any).itemClass?.id === item.id);
+      if (!chest && !this._spawnedFarmIds.has(item.id)) {
+        chest = new AfkChestEntity({
+          itemClass: item,
+          modelUri: 'models/environment/chest-blocky-wood.gltf',
+          modelScale: 1,
+          name: `${item.displayName} Chest`,
+          facingAngle: -90,
+          capacity: 100,
+        });
+        chest.spawn(this.world, chestPositions[index]);
+        existingChests.push(chest);
+        existingChestIds.add(item.id);
+      }
+      chests.push(chest);
     });
 
     // Pair each tree to the nearest chest (simple index mapping)
     treeData.forEach((t, index) => {
-      const chest = chests[index % chests.length];
-      const tree = new AfkTreeEntity({
-        modelUri: t.modelUri,
-        minScale: 0.1,
-        maxScale: 0.3,
-        growthDurationMs: t.growthMs,
-        yieldItemClass: t.item,
-        yieldMin: t.yield,
-        yieldMax: t.yield,
-        name: 'AFK Tree',
-      });
-      tree.linkChest(chest);
-      tree.spawn(this.world, t.pos);
+      const item = t.item;
+      const isUnlocked =
+        (item.id === 'oak_log' && unlocks.oak) ||
+        (item.id === 'snow_log' && unlocks.snow) ||
+        (item.id === 'palm_log' && unlocks.palm) ||
+        (item.id === 'cursed_log' && unlocks.cursed);
+      if (!isUnlocked) return;
+
+      if (!existingTreeIds.has(item.id) && !this._spawnedFarmIds.has(item.id)) {
+        const chest = existingChests.find(c => (c as any).itemClass?.id === item.id) || chests[index % chests.length];
+        const tree = new AfkTreeEntity({
+          modelUri: t.modelUri,
+          minScale: 0.1,
+          maxScale: 0.3,
+          growthDurationMs: t.growthMs,
+          yieldItemClass: t.item,
+          yieldMin: t.yield,
+          yieldMax: t.yield,
+          name: 'AFK Tree',
+        });
+        tree.linkChest(chest);
+        tree.spawn(this.world, t.pos);
+        existingTreeIds.add(item.id);
+        existingTrees.push(tree);
+        this._spawnedFarmIds.add(item.id);
+      }
     });
   }
 

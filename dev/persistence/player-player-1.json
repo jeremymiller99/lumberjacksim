@@ -42,8 +42,12 @@
     "items": []
   },
   "hotbarSelectedIndex": 0,
-  "currency": 5000,
+  "currency": 4955500,
   "ownsHouse": true,
-  "houseLevel": 3,
-  "lastHouseVisitMs": 1758748077098
+  "houseLevel": 2,
+  "lastHouseVisitMs": 1758750557455,
+  "farmOakUnlocked": true,
+  "farmSnowUnlocked": true,
+  "farmPalmUnlocked": true,
+  "farmCursedUnlocked": false
 }
