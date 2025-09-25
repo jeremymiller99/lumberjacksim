@@ -41,6 +41,8 @@ type SerializedGamePlayerData = {
   currentRegionId: string | undefined;
   currentRegionSpawnFacingAngle: number | undefined;
   currentRegionSpawnPoint: Vector3Like | undefined;
+  ownsHouse?: boolean;
+  houseLevel?: number;
   skillExperience: [SkillId, number][];
   backpack: SerializedItemInventoryData;
   hotbar: SerializedItemInventoryData;
@@ -48,6 +50,11 @@ type SerializedGamePlayerData = {
   questLog: SerializedQuestLogData;
   storage: SerializedItemInventoryData;
   wearables: SerializedItemInventoryData;
+  // House farm unlock flags
+  farmOakUnlocked?: boolean;
+  farmSnowUnlocked?: boolean;
+  farmPalmUnlocked?: boolean;
+  farmCursedUnlocked?: boolean;
 }
 
 export default class GamePlayer {
@@ -72,9 +79,16 @@ export default class GamePlayer {
   private _globalExperience: number = 0;
   private _health: number = 100;
   private _currency: number = 0;
+  private _ownsHouse: boolean = false;
+  private _houseLevel: number = 0;
   private _isDead: boolean = false;
   private _saveTimeout: NodeJS.Timeout | undefined;
   private _skillExperience: Map<SkillId, number> = new Map();
+  // Farm unlocks
+  private _farmOakUnlocked: boolean = false;
+  private _farmSnowUnlocked: boolean = false;
+  private _farmPalmUnlocked: boolean = false;
+  private _farmCursedUnlocked: boolean = false;
 
   private constructor(player: Player) {
     this.eventRouter = new EventRouter();
@@ -160,6 +174,14 @@ export default class GamePlayer {
 
   public get currency(): number {
     return this._currency;
+  }
+
+  public get ownsHouse(): boolean {
+    return this._ownsHouse;
+  }
+
+  public get houseLevel(): number {
+    return this._houseLevel;
   }
 
   public getGoldAmount(): number {
@@ -353,16 +375,71 @@ export default class GamePlayer {
 
 
   public joinRegion(region: GameRegion, facingAngle: number, spawnPoint: Vector3Like): void {
+    console.log(`[Region] joinRegion start: ${region.id} (${region.name}) for ${this.player.username}`);
     this.setCurrentRegion(region);
     this.setCurrentRegionSpawnFacingAngle(facingAngle);
     this.setCurrentRegionSpawnPoint(spawnPoint);              
     this.saveImmediate(); // Use immediate save to prevent race conditions during region transitions
     this.player.joinWorld(region.world);
+    console.log('[Region] player.joinWorld called');
     
     // Update portal labels when entering a region
     setTimeout(() => {
       this._updatePortalLabels();
+      console.log('[Region] _updatePortalLabels dispatched');
     }, 1000); // Delay to ensure entities are loaded
+  }
+
+  public teleportToHouse(): void {
+    console.log(`[House] teleportToHouse() called for ${this.player.username} (${this.player.id}), ownsHouse=${this._ownsHouse}`);
+    if (!this._ownsHouse) {
+      this.showNotification('House not available yet, speak to merchant in hub store', 'error');
+      console.log('[House] abort: player does not own a house');
+      return;
+    }
+
+    const GameManagerModule = GameManager; // avoid circular import confusion for TS
+    console.log('[House] requesting or creating player house region');
+    const houseRegion = GameManagerModule.instance.getOrCreatePlayerHouseRegion(this.player.id, this.player.username);
+    console.log(`[House] got region ${houseRegion.id} (${houseRegion.name})`);
+    this.joinRegion(houseRegion, houseRegion.spawnFacingAngle, houseRegion.spawnPoint);
+    console.log('[House] joinRegion() invoked for house');
+    this.showNotification('Teleported to your house.', 'success');
+  }
+
+  public grantHouseOwnership(): void {
+    if (!this._ownsHouse) {
+      console.log(`[House] Granting house ownership to ${this.player.username} (${this.player.id})`);
+      this._ownsHouse = true;
+      this._houseLevel = Math.max(1, this._houseLevel || 0);
+      this.saveImmediate();
+    } else {
+      console.log(`[House] Player already owns a house: ${this.player.username} (${this.player.id})`);
+    }
+  }
+
+  public setHouseLevel(level: number): void {
+    if (!this._ownsHouse) return;
+    this._houseLevel = Math.max(1, Math.min(4, level));
+    this.saveImmediate();
+    // If player is in their house world, rebuild the region instantly
+    if (this._currentRegion && this._currentRegion.id.startsWith('house:')) {
+      try {
+        // Sync barrier state without full rebuild if possible
+        const PlayerHouseRegion = require('./regions/house/PlayerHouseRegion').default;
+        if (this._currentRegion instanceof PlayerHouseRegion) {
+          // Call the region's internal sync via rejoin trick (forces onPlayerJoin, which syncs barriers)
+          const region = this._currentRegion;
+          this.joinRegion(region, region.spawnFacingAngle, this._currentEntity ? this._currentEntity.position : region.spawnPoint);
+        } else {
+          const gm = require('./GameManager').default.instance as import('./GameManager').default;
+          const newRegion = gm.rebuildPlayerHouseRegion(this.player.id, this.player.username);
+          this.joinRegion(newRegion, newRegion.spawnFacingAngle, newRegion.spawnPoint);
+        }
+      } catch (e) {
+        console.error('Failed to rebuild house region:', e);
+      }
+    }
   }
 
   public load(): void {
@@ -501,6 +578,8 @@ export default class GamePlayer {
       this._globalExperience = playerData.skillExperience.reduce((acc, [, experience]) => acc + experience, 0);
       this._health = playerData.health;
       this._currency = playerData.currency ?? 0; // Default to 0 for backward compatibility
+      this._ownsHouse = playerData.ownsHouse ?? false;
+      this._houseLevel = playerData.houseLevel ?? (this._ownsHouse ? 1 : 0);
       this._isDead = this._health <= 0;
       
       // Restore current region if available
@@ -526,6 +605,12 @@ export default class GamePlayer {
       const storageSuccess = this.storage.loadFromSerializedData(playerData.storage);
       const wearablesSuccess = this.wearables.loadFromSerializedData(playerData.wearables || { items: [] });
       
+      // Restore farm unlocks (default false)
+      this._farmOakUnlocked = !!playerData.farmOakUnlocked;
+      this._farmSnowUnlocked = !!playerData.farmSnowUnlocked;
+      this._farmPalmUnlocked = !!playerData.farmPalmUnlocked;
+      this._farmCursedUnlocked = !!playerData.farmCursedUnlocked;
+
       // Restore hotbar selected index (default to 0 for backward compatibility)
       const selectedIndex = playerData.hotbarSelectedIndex ?? 0;
       this.hotbar.setSelectedIndex(selectedIndex);
@@ -723,6 +808,8 @@ export default class GamePlayer {
       currentRegionId: this._currentRegion?.id,
       currentRegionSpawnFacingAngle: this._currentRegionSpawnFacingAngle,
       currentRegionSpawnPoint: this._currentRegionSpawnPoint,
+      ownsHouse: this._ownsHouse,
+      houseLevel: this._houseLevel,
       skillExperience: Array.from(this._skillExperience.entries()),
       backpack: this.backpack.serialize(),
       hotbar: this.hotbar.serialize(),
@@ -730,6 +817,10 @@ export default class GamePlayer {
       questLog: this.questLog.serialize(),
       storage: this.storage.serialize(),
       wearables: this.wearables.serialize(),
+      farmOakUnlocked: this._farmOakUnlocked,
+      farmSnowUnlocked: this._farmSnowUnlocked,
+      farmPalmUnlocked: this._farmPalmUnlocked,
+      farmCursedUnlocked: this._farmCursedUnlocked,
     };
     
     return playerData;
@@ -777,6 +868,18 @@ export default class GamePlayer {
     console.log(`Player currency after migration: ${this._currency}`);
   }
 
+  // Farm unlock getters
+  public get farmOakUnlocked(): boolean { return this._farmOakUnlocked; }
+  public get farmSnowUnlocked(): boolean { return this._farmSnowUnlocked; }
+  public get farmPalmUnlocked(): boolean { return this._farmPalmUnlocked; }
+  public get farmCursedUnlocked(): boolean { return this._farmCursedUnlocked; }
+
+  // Unlock actions
+  public unlockOakFarm(): void { this._farmOakUnlocked = true; this.saveImmediate(); }
+  public unlockSnowFarm(): void { this._farmSnowUnlocked = true; this.saveImmediate(); }
+  public unlockPalmFarm(): void { this._farmPalmUnlocked = true; this.saveImmediate(); }
+  public unlockCursedFarm(): void { this._farmCursedUnlocked = true; this.saveImmediate(); }
+
   private _updateEntityAlertsSceneUIs(): void {
     this.player.ui.sendData({
       type: 'syncEntityAlerts',
@@ -788,14 +891,16 @@ export default class GamePlayer {
     // Update portal labels in the current region when player levels up
     if (!this._currentRegion || !this._currentEntity || !this._currentRegion.world) return;
     
-    // Check if world.entities exists and is an array
-    if (!this._currentRegion.world.entities || !Array.isArray(this._currentRegion.world.entities)) {
+    // Access entities via any to avoid typing issues if not exposed on World type
+    const worldAny = this._currentRegion.world as any;
+    const entities: any[] = Array.isArray(worldAny?.entities) ? worldAny.entities : [];
+    if (entities.length === 0) {
       console.log('World entities not available yet, skipping portal label update');
       return;
     }
     
     // Find all portals in the current region and update their labels
-    const portals = this._currentRegion.world.entities.filter(entity => entity && entity.constructor.name === 'PortalEntity');
+    const portals = entities.filter(entity => entity && entity.constructor?.name === 'PortalEntity');
     console.log(`Found ${portals.length} portals to update`);
     
     for (const portal of portals) {
@@ -872,6 +977,9 @@ export default class GamePlayer {
   private _setupNewPlayer(): void {
     // Give new players starting currency
     this._currency = 0; // Start with 0 gold
+    // Ensure new players do not own a house by default
+    this._ownsHouse = false;
+    this._houseLevel = 0;
     
     // Give new players a starting rusty axe
     import('./items/axes/RustyAxeItem').then(({ default: RustyAxeItem }) => {
@@ -883,5 +991,8 @@ export default class GamePlayer {
       this.questLog.startQuest(FirstChopQuest);
       this.showNotification('Welcome to the lumber business! Check your quest log to get started.', 'success');
     });
+
+    // Persist initial state
+    this.saveImmediate();
   }
 }

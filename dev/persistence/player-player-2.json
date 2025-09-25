@@ -1,6 +1,6 @@
 {
   "health": 110,
-  "currentRegionId": "oakForest",
+  "currentRegionId": "hub",
   "skillExperience": [
     [
       "lumber",
@@ -27,13 +27,19 @@
   },
   "currentRegionSpawnFacingAngle": 0,
   "currentRegionSpawnPoint": {
-    "x": 0,
+    "x": 5,
     "y": 2,
-    "z": 0
+    "z": 5
   },
   "wearables": {
     "items": []
   },
-  "hotbarSelectedIndex": 2,
-  "currency": 800
+  "hotbarSelectedIndex": 0,
+  "currency": 800,
+  "ownsHouse": true,
+  "houseLevel": 1,
+  "farmOakUnlocked": false,
+  "farmSnowUnlocked": false,
+  "farmPalmUnlocked": false,
+  "farmCursedUnlocked": false
 }

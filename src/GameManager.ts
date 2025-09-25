@@ -3,6 +3,7 @@ import GameClock from './GameClock';
 import GamePlayer from './GamePlayer';
 import ItemRegistry from './items/ItemRegistry';
 import type GameRegion from './GameRegion';
+import PlayerHouseRegion from './regions/house/PlayerHouseRegion';
 
 // Import all regions
 import HubRegion from './regions/Hub/HubRegion';
@@ -15,6 +16,7 @@ export default class GameManager {
   public static readonly instance = new GameManager();
 
   private _regions: Map<string, GameRegion> = new Map();
+  private _playerHouseRegions: Map<string, PlayerHouseRegion> = new Map();
   private _startRegion: GameRegion;
 
   public constructor() {
@@ -25,6 +27,35 @@ export default class GameManager {
 
   public getRegion(id: string): GameRegion | undefined {
     return this._regions.get(id);
+  }
+
+  public getOrCreatePlayerHouseRegion(ownerPlayerId: string, ownerPlayerName: string): PlayerHouseRegion {
+    let region = this._playerHouseRegions.get(ownerPlayerId);
+
+    if (!region) {
+      region = new PlayerHouseRegion(ownerPlayerId, ownerPlayerName);
+      this._regions.set(region.id, region);
+      this._playerHouseRegions.set(ownerPlayerId, region);
+      GameClock.instance.addRegionClockCycle(region);
+      console.log(`GameManager: Created house region for player ${ownerPlayerId} (${ownerPlayerName})`);
+    }
+
+    return region;
+  }
+
+  public rebuildPlayerHouseRegion(ownerPlayerId: string, ownerPlayerName: string): PlayerHouseRegion {
+    const oldRegion = this._playerHouseRegions.get(ownerPlayerId);
+    if (oldRegion) {
+      try {
+        GameClock.instance.removeRegionClockCycle(oldRegion);
+        oldRegion.world.stop();
+      } catch {}
+      this._regions.delete(oldRegion.id);
+      this._playerHouseRegions.delete(ownerPlayerId);
+      console.log(`GameManager: Rebuilding house region for player ${ownerPlayerId} (${ownerPlayerName})`);
+    }
+
+    return this.getOrCreatePlayerHouseRegion(ownerPlayerId, ownerPlayerName);
   }
 
   public async loadItems(): Promise<void> {

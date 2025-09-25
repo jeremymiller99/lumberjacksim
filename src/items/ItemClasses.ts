@@ -4,7 +4,7 @@ import RawLogItem from './materials/RawLogItem';
 // Regional wood types
 import OakLogItem from './materials/OakLogItem';
 import PalmLogItem from './materials/PalmLogItem';
-import PineLogItem from './materials/PineLogItem';
+import SnowLogItem from './materials/SnowLogItem';
 import CursedLogItem from './materials/CursedLogItem';
 
 // Basic axes
@@ -32,7 +32,7 @@ export default [
   RawLogItem,
   OakLogItem,
   PalmLogItem,
-  PineLogItem,
+  SnowLogItem,
   CursedLogItem,
   
   // Basic Axes (progression: Rusty -> Iron -> Gold)

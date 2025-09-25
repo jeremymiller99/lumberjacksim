@@ -378,6 +378,13 @@ export default class GamePlayerEntity extends DefaultPlayerEntity implements IDa
       input.o = false;
     }
 
+    // Press f to teleport to house (if owned)
+    if (input.f) {
+      console.log(`[Input] f pressed by ${this.player.username}`);
+      this._gamePlayer.teleportToHouse();
+      input.f = false;
+    }
+
     // Debug: Force UI sync (F5 key)
     if (input.f5) {
       this._gamePlayer.forceUISync();
