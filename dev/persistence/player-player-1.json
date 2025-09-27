@@ -1,11 +1,11 @@
 {
   "health": 190,
-  "currentRegionId": "house:player-1",
+  "currentRegionId": "hub",
   "currentRegionSpawnFacingAngle": 0,
   "currentRegionSpawnPoint": {
-    "x": 12,
+    "x": 5,
     "y": 2,
-    "z": 0
+    "z": 5
   },
   "skillExperience": [
     [
@@ -14,7 +14,7 @@
     ],
     [
       "lumber",
-      6139
+      6158
     ],
     [
       "bartering",
@@ -42,10 +42,10 @@
     "items": []
   },
   "hotbarSelectedIndex": 0,
-  "currency": 4955500,
+  "currency": 4955578,
   "ownsHouse": true,
   "houseLevel": 2,
-  "lastHouseVisitMs": 1758750557455,
+  "lastHouseVisitMs": 1758937131735,
   "farmOakUnlocked": true,
   "farmSnowUnlocked": true,
   "farmPalmUnlocked": true,

@@ -183,14 +183,13 @@ export default class GameRegion {
   }
 
   protected onPlayerLeave(player: Player) {
-    // We assume the player left the game on region leave, we do all cleanup here.
-    // If they didn't, there's no downside and their player object will be reinitialized 
-    // when they rejoin this or another rejoin before their connection times out.
-    // If this causes issues in the future, we should move .remove to the actualy
-    // Player closed connection event.
+    // Save player data immediately when leaving a region to prevent data loss during teleportation
     const gamePlayer = GamePlayer.getOrCreate(player);
     gamePlayer.saveImmediate(); // Use immediate save to prevent race conditions during region transitions
-    GamePlayer.remove(player);
+    
+    // Don't remove the GamePlayer instance during region transitions to prevent inventory loss
+    // The GamePlayer instance will be cleaned up when the player actually disconnects
+    // gamePlayer.despawnFromRegion() is called by the GamePlayerEntity.despawn() method
 
     this._playerCount--;
 

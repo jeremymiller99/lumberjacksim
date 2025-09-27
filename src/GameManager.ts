@@ -1,4 +1,4 @@
-import { Player, PlayerManager, World } from 'hytopia';
+import { Player, PlayerManager, PlayerManagerEvent, World } from 'hytopia';
 import GameClock from './GameClock';
 import GamePlayer from './GamePlayer';
 import ItemRegistry from './items/ItemRegistry';
@@ -21,6 +21,18 @@ export default class GameManager {
 
   public constructor() {
     PlayerManager.instance.worldSelectionHandler = this._selectWorldForPlayer;
+    
+    // Listen for actual player disconnections to clean up GamePlayer instances
+    // Use the global event router to listen for PlayerManager events
+    const globalEventRouter = (PlayerManager.instance as any).globalEventRouter || (PlayerManager.instance as any);
+    if (globalEventRouter && typeof globalEventRouter.on === 'function') {
+      globalEventRouter.on(PlayerManagerEvent.PLAYER_DISCONNECTED, ({ player }: { player: Player }) => {
+        console.log(`[GameManager] Player ${player.username} (${player.id}) disconnected, cleaning up GamePlayer instance`);
+        GamePlayer.remove(player);
+      });
+    } else {
+      console.warn('[GameManager] Could not set up player disconnect listener - PlayerManager events not available');
+    }
   }
 
   public get startRegion(): GameRegion { return this._startRegion; }
