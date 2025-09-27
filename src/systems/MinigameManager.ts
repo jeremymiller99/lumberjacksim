@@ -1,6 +1,7 @@
 import { BaseMinigame, MinigameEvent } from './BaseMinigame';
 import BeeMinigame from './BeeMinigame';
 import type GamePlayerEntity from '../GamePlayerEntity';
+import LeaderboardManager from './LeaderboardManager';
 
 export type MinigameType = 'bee' | 'fishing' | 'lockpicking' | 'crafting_timing';
 
@@ -35,7 +36,9 @@ export default class MinigameManager {
     
     if (minigame) {
       // Set up event listeners
-      minigame.eventRouter.on(MinigameEvent.COMPLETED, () => {
+      minigame.eventRouter.on(MinigameEvent.COMPLETED, ({ minigame: completedMinigame }) => {
+        // Track minigame win for leaderboard
+        LeaderboardManager.instance.recordMinigameWin(player.gamePlayer, completedMinigame);
         this._activeMinigames.delete(player.gamePlayer.player.id);
       });
       

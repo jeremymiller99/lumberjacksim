@@ -4,6 +4,7 @@ import GamePlayer from './GamePlayer';
 import ItemRegistry from './items/ItemRegistry';
 import type GameRegion from './GameRegion';
 import PlayerHouseRegion from './regions/house/PlayerHouseRegion';
+import LeaderboardManager from './systems/LeaderboardManager';
 
 // Import all regions
 import HubRegion from './regions/Hub/HubRegion';
@@ -21,6 +22,9 @@ export default class GameManager {
 
   public constructor() {
     PlayerManager.instance.worldSelectionHandler = this._selectWorldForPlayer;
+    
+    // Initialize leaderboard tracking
+    LeaderboardManager.setupGlobalTracking();
     
     // Listen for actual player disconnections to clean up GamePlayer instances
     // Use the global event router to listen for PlayerManager events

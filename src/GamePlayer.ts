@@ -55,6 +55,14 @@ type SerializedGamePlayerData = {
   farmSnowUnlocked?: boolean;
   farmPalmUnlocked?: boolean;
   farmCursedUnlocked?: boolean;
+  // Monthly leaderboard tracking
+  monthlyStats?: { [monthKey: string]: {
+    goldEarned: number;
+    logsMined: number;
+    minigamesWon: number;
+    xpGained: number;
+  }};
+  lastKnownUsername?: string;
 }
 
 export default class GamePlayer {
@@ -89,6 +97,14 @@ export default class GamePlayer {
   private _farmSnowUnlocked: boolean = false;
   private _farmPalmUnlocked: boolean = false;
   private _farmCursedUnlocked: boolean = false;
+  
+  // Monthly leaderboard tracking
+  private _monthlyStats: Map<string, {
+    goldEarned: number;
+    logsMined: number;
+    minigamesWon: number;
+    xpGained: number;
+  }> = new Map();
 
   private constructor(player: Player) {
     this.eventRouter = new EventRouter();
@@ -320,6 +336,12 @@ export default class GamePlayer {
     }
     
     this._currency = Math.max(0, newCurrency);
+    
+    // Track gold earned for leaderboard (only positive amounts)
+    if (amount > 0) {
+      this.trackGoldEarned(amount);
+    }
+    
     this._updateCurrencyUI();
     this.save();
     return true;
@@ -333,6 +355,11 @@ export default class GamePlayer {
     // Update experience
     this._globalExperience += amount;
     this._skillExperience.set(skillId, (this._skillExperience.get(skillId) ?? 0) + amount);
+    
+    // Track XP gained for leaderboard
+    if (amount > 0) {
+      this.trackXpGained(amount);
+    }
     
     // Check for level ups and notify
     const newMainLevel = Levels.getLevelFromExperience(this._globalExperience);
@@ -610,6 +637,14 @@ export default class GamePlayer {
       this._farmSnowUnlocked = !!playerData.farmSnowUnlocked;
       this._farmPalmUnlocked = !!playerData.farmPalmUnlocked;
       this._farmCursedUnlocked = !!playerData.farmCursedUnlocked;
+      
+      // Restore monthly stats
+      this._monthlyStats.clear();
+      if (playerData.monthlyStats) {
+        for (const [monthKey, stats] of Object.entries(playerData.monthlyStats)) {
+          this._monthlyStats.set(monthKey, stats);
+        }
+      }
 
       // Restore hotbar selected index (default to 0 for backward compatibility)
       const selectedIndex = playerData.hotbarSelectedIndex ?? 0;
@@ -821,6 +856,8 @@ export default class GamePlayer {
       farmSnowUnlocked: this._farmSnowUnlocked,
       farmPalmUnlocked: this._farmPalmUnlocked,
       farmCursedUnlocked: this._farmCursedUnlocked,
+      monthlyStats: Object.fromEntries(this._monthlyStats),
+      lastKnownUsername: this.player.username,
     };
     
     return playerData;
@@ -972,6 +1009,63 @@ export default class GamePlayer {
         }
       }),
     });
+  }
+
+  // Monthly leaderboard tracking methods
+  private _getCurrentMonthKey(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private _ensureMonthlyStats(monthKey: string): void {
+    if (!this._monthlyStats.has(monthKey)) {
+      this._monthlyStats.set(monthKey, {
+        goldEarned: 0,
+        logsMined: 0,
+        minigamesWon: 0,
+        xpGained: 0,
+      });
+    }
+  }
+
+  public trackGoldEarned(amount: number): void {
+    if (amount <= 0) return;
+    const monthKey = this._getCurrentMonthKey();
+    this._ensureMonthlyStats(monthKey);
+    const stats = this._monthlyStats.get(monthKey)!;
+    stats.goldEarned += amount;
+    this.save();
+  }
+
+  public trackLogMined(): void {
+    const monthKey = this._getCurrentMonthKey();
+    this._ensureMonthlyStats(monthKey);
+    const stats = this._monthlyStats.get(monthKey)!;
+    stats.logsMined += 1;
+    this.save();
+  }
+
+  public incrementMinigameWin(minigameType: string, monthKey: string): void {
+    this._ensureMonthlyStats(monthKey);
+    const stats = this._monthlyStats.get(monthKey)!;
+    stats.minigamesWon += 1;
+    
+    // Show notification
+    this.showNotification(`Minigame win #${stats.minigamesWon} this month!`, 'success');
+    this.save();
+  }
+
+  public trackXpGained(amount: number): void {
+    if (amount <= 0) return;
+    const monthKey = this._getCurrentMonthKey();
+    this._ensureMonthlyStats(monthKey);
+    const stats = this._monthlyStats.get(monthKey)!;
+    stats.xpGained += amount;
+    this.save();
+  }
+
+  public getMonthlyStats(monthKey: string): { goldEarned: number; logsMined: number; minigamesWon: number; xpGained: number } | null {
+    return this._monthlyStats.get(monthKey) || null;
   }
 
   private _setupNewPlayer(): void {

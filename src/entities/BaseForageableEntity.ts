@@ -247,6 +247,11 @@ export default class BaseForageableEntity extends BaseEntity {
       if (!interactor.gamePlayer.isDead) {
         interactor.gamePlayer.adjustSkillExperience(SkillId.LUMBER, this._experienceReward);
         
+        // Track log mining for leaderboard (if this is a tree)
+        if (this.name.toLowerCase().includes('tree')) {
+          interactor.gamePlayer.trackLogMined();
+        }
+        
         console.log(`BaseForageableEntity: Emitting FORAGED event for ${this.name}`);
         interactor.gamePlayer.eventRouter.emit(BaseForageableEntityPlayerEvent.FORAGED, { entity: this });
       }

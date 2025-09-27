@@ -14,7 +14,7 @@
     ],
     [
       "lumber",
-      6158
+      6260
     ],
     [
       "bartering",
@@ -42,12 +42,21 @@
     "items": []
   },
   "hotbarSelectedIndex": 0,
-  "currency": 4955578,
+  "currency": 4956220,
   "ownsHouse": true,
   "houseLevel": 2,
-  "lastHouseVisitMs": 1758937131735,
+  "lastHouseVisitMs": 1758940934398,
   "farmOakUnlocked": true,
   "farmSnowUnlocked": true,
   "farmPalmUnlocked": true,
-  "farmCursedUnlocked": false
+  "farmCursedUnlocked": false,
+  "monthlyStats": {
+    "2025-09": {
+      "goldEarned": 642,
+      "logsMined": 7,
+      "minigamesWon": 1,
+      "xpGained": 102
+    }
+  },
+  "lastKnownUsername": "player-1"
 }
