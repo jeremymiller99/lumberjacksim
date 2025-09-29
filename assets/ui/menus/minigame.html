@@ -36,6 +36,7 @@
       <div class="bee-minigame" id="bee-minigame" style="display: none;">
         <div class="bee-game-area" id="bee-game-area">
           <!-- Bees will be spawned here dynamically -->
+          <!-- Particles will be spawned here dynamically -->
         </div>
         <div class="bee-score">
           <span>Hearts: <span id="bee-hearts">3</span> / <span id="bee-max-hearts">3</span></span>
@@ -174,6 +175,18 @@
     heartsElement.textContent = gameData.hearts;
     maxHeartsElement.textContent = gameData.maxHearts;
     
+    // Handle damage events for particle effects
+    if (gameData.damageEvents) {
+      gameData.damageEvents.forEach(damageEvent => {
+        createDamageParticles(damageEvent.x, damageEvent.y);
+        // Add screen shake effect
+        gameArea.classList.add('screen-shake');
+        setTimeout(() => {
+          gameArea.classList.remove('screen-shake');
+        }, 500);
+      });
+    }
+    
     // Clean up removed bees
     const existingBees = Array.from(gameArea.children);
     const currentBeeIds = gameData.bees.map(bee => bee.id);
@@ -194,6 +207,9 @@
         beeElement.className = 'bee';
         beeElement.addEventListener('click', () => handleBeeClick(bee.id));
         gameArea.appendChild(beeElement);
+        
+        // Create spawn particles for new bee
+        createSpawnParticles(bee.x, bee.y);
       }
       
       // Update bee properties
@@ -205,10 +221,18 @@
       // Update bee appearance
       if (bee.hasHitPlayer) {
         beeElement.classList.add('bee-eliminated');
-        beeElement.classList.remove('bee-angry', 'bee-calm');
+        beeElement.classList.remove('bee-angry', 'bee-calm', 'bee-dying');
+      } else if (bee.isDying) {
+        // Check if this bee just started dying (create particles once)
+        if (!beeElement.dataset.particlesCreated) {
+          createSwatParticles(bee.x, bee.y);
+          beeElement.dataset.particlesCreated = 'true';
+        }
+        beeElement.classList.add('bee-dying');
+        beeElement.classList.remove('bee-angry', 'bee-calm', 'bee-eliminated');
       } else {
         beeElement.classList.add('bee-angry');
-        beeElement.classList.remove('bee-calm', 'bee-eliminated');
+        beeElement.classList.remove('bee-calm', 'bee-eliminated', 'bee-dying');
       }
     });
   }
@@ -282,7 +306,7 @@
     }, 1000);
   }
 
-  // Escape key to close
+  // Escape key to close, Spacebar to swat
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && currentMinigame) {
       hytopia.sendData({
@@ -291,8 +315,117 @@
           type: 'cancel'
         }
       });
+    } else if (e.key === ' ' && currentMinigame && currentMinigame.minigameId === 'bee_minigame') {
+      e.preventDefault(); // Prevent page scroll
+      hytopia.sendData({
+        type: 'minigameInput',
+        inputData: {
+          type: 'spacebarSwat'
+        }
+      });
     }
   });
+
+  // Particle System Functions
+  function createSwatParticles(x, y) {
+    const gameArea = document.getElementById('bee-game-area');
+    if (!gameArea) return;
+    
+    // Create multiple particles for swat effect
+    for (let i = 0; i < 8; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle swat-particle';
+      
+      // Random offset for particle spread
+      const offsetX = (Math.random() - 0.5) * 40;
+      const offsetY = (Math.random() - 0.5) * 40;
+      
+      particle.style.left = x + '%';
+      particle.style.top = y + '%';
+      particle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      
+      gameArea.appendChild(particle);
+      
+      // Remove particle after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 600);
+    }
+  }
+  
+  function createSpawnParticles(x, y) {
+    const gameArea = document.getElementById('bee-game-area');
+    if (!gameArea) return;
+    
+    // Create sparkle particles for bee spawn
+    for (let i = 0; i < 5; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle spawn-particle';
+      
+      // Random offset for sparkle spread
+      const offsetX = (Math.random() - 0.5) * 60;
+      const offsetY = (Math.random() - 0.5) * 60;
+      
+      particle.style.left = x + '%';
+      particle.style.top = y + '%';
+      particle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      
+      gameArea.appendChild(particle);
+      
+      // Remove particle after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 800);
+    }
+  }
+  
+  function createDamageParticles(x, y) {
+    const gameArea = document.getElementById('bee-game-area');
+    if (!gameArea) return;
+    
+    // Create damage burst particles
+    for (let i = 0; i < 6; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle damage-particle';
+      
+      // Random offset for damage burst
+      const offsetX = (Math.random() - 0.5) * 80;
+      const offsetY = (Math.random() - 0.5) * 80;
+      
+      particle.style.left = x + '%';
+      particle.style.top = y + '%';
+      particle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      
+      gameArea.appendChild(particle);
+      
+      // Remove particle after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 700);
+    }
+    
+    // Add floating heart particle for damage
+    const heartParticle = document.createElement('div');
+    heartParticle.className = 'particle heart-particle';
+    heartParticle.textContent = '💔';
+    heartParticle.style.left = x + '%';
+    heartParticle.style.top = y + '%';
+    
+    gameArea.appendChild(heartParticle);
+    
+    // Remove heart particle after animation
+    setTimeout(() => {
+      if (heartParticle.parentNode) {
+        heartParticle.parentNode.removeChild(heartParticle);
+      }
+    }, 1000);
+  }
 </script>
 
 <style>
@@ -514,36 +647,50 @@
     border-radius: 8px;
     overflow: hidden;
     cursor: crosshair;
+    transition: transform 0.1s ease;
+  }
+
+  .screen-shake {
+    animation: screen-shake 0.5s ease-in-out;
+  }
+
+  @keyframes screen-shake {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-5px); }
+    20% { transform: translateX(5px); }
+    30% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    50% { transform: translateX(-2px); }
+    60% { transform: translateX(2px); }
+    70% { transform: translateX(-1px); }
+    80% { transform: translateX(1px); }
+    90% { transform: translateX(0); }
   }
 
   .bee {
     position: absolute;
-    background: #FFD700;
-    border: 2px solid #FFA500;
-    border-radius: 50%;
+    background: transparent;
+    border: none;
     cursor: pointer;
     transition: all 0.1s ease;
     transform: translate(-50%, -50%);
     z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .bee::before {
     content: '🐝';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 70%;
+    font-size: 200%;
+    display: block;
   }
 
   .bee:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    transform: translate(-50%, -50%) scale(1.2);
   }
 
   .bee-angry {
-    background: #FF6B6B;
-    border-color: #FF4444;
     animation: angry-buzz 0.3s ease-in-out infinite alternate;
   }
 
@@ -552,8 +699,6 @@
   }
 
   .bee-calm {
-    background: #90EE90;
-    border-color: #32CD32;
     opacity: 0.6;
     cursor: default;
     animation: none;
@@ -572,6 +717,119 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+  }
+
+  .bee-dying {
+    pointer-events: none;
+    animation: bee-death 1s ease-out forwards;
+  }
+
+  @keyframes bee-death {
+    0% { 
+      transform: translate(-50%, -50%) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    50% { 
+      transform: translate(-50%, -50%) rotate(180deg) scale(0.8);
+      opacity: 0.7;
+    }
+    100% { 
+      transform: translate(-50%, -50%) rotate(360deg) scale(0.3);
+      opacity: 0;
+    }
+  }
+
+  /* Particle Effects */
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .swat-particle {
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, #FFD700, #FFA500);
+    border-radius: 50%;
+    animation: swat-burst 0.6s ease-out forwards;
+  }
+
+  .spawn-particle {
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, #90EE90, #32CD32);
+    border-radius: 50%;
+    animation: spawn-sparkle 0.8s ease-out forwards;
+  }
+
+  .damage-particle {
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, #FF6B6B, #FF4444);
+    border-radius: 50%;
+    animation: damage-burst 0.7s ease-out forwards;
+  }
+
+  .heart-particle {
+    font-size: 16px;
+    color: #FF6B6B;
+    animation: heart-float 1s ease-out forwards;
+  }
+
+  @keyframes swat-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes spawn-sparkle {
+    0% {
+      transform: translate(-50%, -50%) scale(0) rotate(0deg);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.2) rotate(180deg);
+      opacity: 0.9;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.3) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes damage-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+    }
+    30% {
+      transform: translate(-50%, -50%) scale(2);
+      opacity: 0.9;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes heart-float {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) translateY(-50px) scale(0.3);
+      opacity: 0;
+    }
   }
 
   @keyframes angry-buzz {
@@ -600,8 +858,8 @@
     }
     
     .bee {
-      min-width: 40px;
-      min-height: 40px;
+      min-width: 80px;
+      min-height: 80px;
     }
   }
 
@@ -624,8 +882,8 @@
     }
     
     .bee {
-      min-width: 35px;
-      min-height: 35px;
+      min-width: 70px;
+      min-height: 70px;
     }
   }
 </style>

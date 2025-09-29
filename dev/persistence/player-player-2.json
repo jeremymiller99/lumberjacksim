@@ -1,10 +1,10 @@
 {
-  "health": 110,
-  "currentRegionId": "hub",
+  "health": 120,
+  "currentRegionId": "oakForest",
   "skillExperience": [
     [
       "lumber",
-      295
+      483
     ]
   ],
   "backpack": {
@@ -14,8 +14,17 @@
     "items": [
       {
         "position": 0,
+        "itemId": "iron_axe"
+      },
+      {
+        "position": 2,
         "itemId": "raw_log",
-        "quantity": 46
+        "quantity": 25
+      },
+      {
+        "position": 1,
+        "itemId": "oak_log",
+        "quantity": 173
       }
     ]
   },
@@ -27,19 +36,28 @@
   },
   "currentRegionSpawnFacingAngle": 0,
   "currentRegionSpawnPoint": {
-    "x": 5,
+    "x": 0,
     "y": 2,
-    "z": 5
+    "z": 0
   },
   "wearables": {
     "items": []
   },
   "hotbarSelectedIndex": 0,
-  "currency": 800,
+  "currency": 1011,
   "ownsHouse": true,
   "houseLevel": 1,
   "farmOakUnlocked": false,
   "farmSnowUnlocked": false,
   "farmPalmUnlocked": false,
-  "farmCursedUnlocked": false
+  "farmCursedUnlocked": false,
+  "monthlyStats": {
+    "2025-09": {
+      "goldEarned": 286,
+      "logsMined": 15,
+      "minigamesWon": 4,
+      "xpGained": 188
+    }
+  },
+  "lastKnownUsername": "player-2"
 }

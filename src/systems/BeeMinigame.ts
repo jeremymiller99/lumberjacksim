@@ -10,6 +10,13 @@ export type BeeMinigameData = {
   gameWidth: number;
   gameHeight: number;
   survived: boolean;
+  damageEvents: DamageEvent[];
+}
+
+export type DamageEvent = {
+  x: number;
+  y: number;
+  timestamp: number;
 }
 
 export type BeeData = {
@@ -23,6 +30,8 @@ export type BeeData = {
   hasHitPlayer: boolean;
   spawnTime: number;
   lastUpdateTime: number; // For smooth time-based movement
+  isDying: boolean; // Is bee in death animation
+  deathStartTime?: number; // When death animation started
 }
 
 export type PlayerData = {
@@ -38,14 +47,14 @@ export default class BeeMinigame extends BaseMinigame {
   private _maxHearts: number = 3;
   private _gameWidth: number = 800; // Game area width in pixels
   private _gameHeight: number = 400; // Game area height in pixels
-  private _beeSpawnRate: number = 1200; // Spawn a bee every 1200ms (slower spawn rate)
+  private _beeSpawnRate: number = 600; // Spawn a bee every 600ms (swarm rate)
   private _nextBeeId: number = 0;
   
   public constructor(rewards: MinigameOptions['rewards'], countdownSeconds?: number) {
     super({
       id: 'bee_minigame',
       name: 'Calm the Bees',
-      description: 'Click on the angry bees before they reach you! You have 3 hearts. Survive for 10 seconds!',
+      description: 'Swat the angry bee swarm! Click on bees or press SPACEBAR to swat the closest one. You have 3 hearts. Survive for 10 seconds!',
       durationMs: 10000, // 10 seconds
       rewards,
       failureConsequence: 'lose_rewards',
@@ -64,7 +73,8 @@ export default class BeeMinigame extends BaseMinigame {
       },
       gameWidth: this._gameWidth,
       gameHeight: this._gameHeight,
-      survived: false
+      survived: false,
+      damageEvents: []
     };
   }
   
@@ -102,18 +112,48 @@ export default class BeeMinigame extends BaseMinigame {
   protected _onUIInput(inputData: any): void {
     if (inputData.type === 'beeClick') {
       this._handleBeeClick(inputData.beeId);
+    } else if (inputData.type === 'spacebarSwat') {
+      this._handleSpacebarSwat();
     }
   }
   
   private _handleBeeClick(beeId: string): void {
     const bee = this._gameData.bees.find(b => b.id === beeId);
-    if (!bee || bee.hasHitPlayer) return;
+    if (!bee || bee.hasHitPlayer || bee.isDying) return;
     
-    // Remove the clicked bee
-    bee.hasHitPlayer = true;
-    
-    // Visual feedback
-    this._player?.showNotification(`Bee eliminated! 🐝💥`, 'success');
+    // Start death animation for clicked bee
+    this._killBee(bee);
+  }
+
+  private _handleSpacebarSwat(): void {
+    // Find the closest bee to the player
+    const aliveBees = this._gameData.bees.filter(b => !b.hasHitPlayer && !b.isDying);
+    if (aliveBees.length === 0) return;
+
+    let closestBee = aliveBees[0];
+    let closestDistance = this._getDistanceToPlayer(closestBee);
+
+    for (const bee of aliveBees) {
+      const distance = this._getDistanceToPlayer(bee);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestBee = bee;
+      }
+    }
+
+    // Kill the closest bee
+    this._killBee(closestBee);
+  }
+
+  private _getDistanceToPlayer(bee: BeeData): number {
+    const deltaX = bee.x - this._gameData.player.x;
+    const deltaY = bee.y - this._gameData.player.y;
+    return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  }
+
+  private _killBee(bee: BeeData): void {
+    bee.isDying = true;
+    bee.deathStartTime = performance.now();
   }
   
   private _startUpdateLoop(): void {
@@ -181,11 +221,12 @@ export default class BeeMinigame extends BaseMinigame {
       y,
       targetX: 50, // Always target center
       targetY: 50, // Always target center
-      speed: 15 + Math.random() * 10, // Speed between 15-25 percentage points per second
-      size: 30 + Math.random() * 15, // Size between 30 and 45 pixels
+      speed: 12 + Math.random() * 8, // Speed between 12-20 percentage points per second (faster swarm)
+      size: 80 + Math.random() * 40, // Size between 80 and 120 pixels (much larger)
       hasHitPlayer: false,
       spawnTime: now,
-      lastUpdateTime: now
+      lastUpdateTime: now,
+      isDying: false
     };
     
     this._gameData.bees.push(bee);
@@ -216,6 +257,22 @@ export default class BeeMinigame extends BaseMinigame {
     // Update bee positions and check collisions
     this._gameData.bees = this._gameData.bees.filter(bee => {
       if (bee.hasHitPlayer) return false; // Remove clicked/eliminated bees
+      
+      // Handle death animation
+      if (bee.isDying) {
+        if (!bee.deathStartTime) bee.deathStartTime = now;
+        const deathDuration = 1000; // 1 second death animation
+        const deathProgress = (now - bee.deathStartTime) / deathDuration;
+        
+        if (deathProgress >= 1) {
+          return false; // Remove bee after death animation
+        }
+        
+        // Make bee fall down during death animation
+        bee.y += 50 * (now - bee.lastUpdateTime) / 1000; // Fall speed
+        bee.lastUpdateTime = now;
+        return true; // Keep bee during death animation
+      }
       
       // Calculate time delta for smooth movement
       const deltaTime = (now - bee.lastUpdateTime) / 1000; // Convert to seconds
@@ -249,8 +306,12 @@ export default class BeeMinigame extends BaseMinigame {
       if (playerDistance < collisionDistance) {
         this._gameData.hearts--;
         
-        // Show damage feedback
-        this._player?.showNotification(`💔 A bee reached you! ${this._gameData.hearts} hearts left!`, 'error');
+        // Add damage event for particle effects
+        this._gameData.damageEvents.push({
+          x: this._gameData.player.x,
+          y: this._gameData.player.y,
+          timestamp: now
+        });
         
         return false; // Remove this bee
       }
@@ -262,6 +323,11 @@ export default class BeeMinigame extends BaseMinigame {
       
       return true; // Keep this bee
     });
+    
+    // Clean up old damage events (older than 2 seconds)
+    this._gameData.damageEvents = this._gameData.damageEvents.filter(
+      event => now - event.timestamp < 2000
+    );
   }
   
   private _sendGameUpdate(): void {

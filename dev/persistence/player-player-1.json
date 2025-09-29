@@ -1,11 +1,11 @@
 {
   "health": 190,
-  "currentRegionId": "hub",
+  "currentRegionId": "oakForest",
   "currentRegionSpawnFacingAngle": 0,
   "currentRegionSpawnPoint": {
-    "x": 5,
+    "x": 0,
     "y": 2,
-    "z": 5
+    "z": 0
   },
   "skillExperience": [
     [
@@ -14,7 +14,7 @@
     ],
     [
       "lumber",
-      6260
+      6708
     ],
     [
       "bartering",
@@ -22,13 +22,38 @@
     ]
   ],
   "backpack": {
-    "items": []
+    "items": [
+      {
+        "position": 1,
+        "itemId": "raw_log",
+        "quantity": 4
+      },
+      {
+        "position": 0,
+        "itemId": "oak_log",
+        "quantity": 389
+      },
+      {
+        "position": 2,
+        "itemId": "straw_hat"
+      }
+    ]
   },
   "hotbar": {
     "items": [
       {
         "position": 0,
         "itemId": "gold_axe"
+      },
+      {
+        "position": 1,
+        "itemId": "oak_log",
+        "quantity": 389
+      },
+      {
+        "position": 2,
+        "itemId": "raw_log",
+        "quantity": 16
       }
     ]
   },
@@ -42,20 +67,20 @@
     "items": []
   },
   "hotbarSelectedIndex": 0,
-  "currency": 4956220,
+  "currency": 4956590,
   "ownsHouse": true,
   "houseLevel": 2,
-  "lastHouseVisitMs": 1758940934398,
+  "lastHouseVisitMs": 1759178488529,
   "farmOakUnlocked": true,
   "farmSnowUnlocked": true,
   "farmPalmUnlocked": true,
   "farmCursedUnlocked": false,
   "monthlyStats": {
     "2025-09": {
-      "goldEarned": 642,
-      "logsMined": 7,
-      "minigamesWon": 1,
-      "xpGained": 102
+      "goldEarned": 1062,
+      "logsMined": 55,
+      "minigamesWon": 7,
+      "xpGained": 550
     }
   },
   "lastKnownUsername": "player-1"

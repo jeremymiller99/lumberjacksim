@@ -6709,6 +6709,7 @@ window.ItemTooltips = (function() {
           <!-- Player will be spawned here -->
           <div class="player" id="player">🧑‍🌾</div>
           <!-- Bees will be spawned here dynamically -->
+          <!-- Particles will be spawned here dynamically -->
         </div>
         <div class="bee-hud">
           <div class="bee-hearts">
@@ -6718,7 +6719,7 @@ window.ItemTooltips = (function() {
             </div>
           </div>
           <div class="bee-instructions">
-            Click on the bees before they reach you!
+            Click on bees or press SPACEBAR to swat the closest one!
           </div>
         </div>
       </div>
@@ -6862,6 +6863,18 @@ window.ItemTooltips = (function() {
       }
     }
     
+    // Handle damage events for particle effects
+    if (gameData.damageEvents) {
+      gameData.damageEvents.forEach(damageEvent => {
+        createDamageParticles(damageEvent.x, damageEvent.y);
+        // Add screen shake effect
+        gameArea.classList.add('screen-shake');
+        setTimeout(() => {
+          gameArea.classList.remove('screen-shake');
+        }, 500);
+      });
+    }
+    
     // Update player position
     if (player && gameData.player) {
       player.style.left = gameData.player.x + '%';
@@ -6890,6 +6903,9 @@ window.ItemTooltips = (function() {
         beeElement = document.createElement('div');
         beeElement.id = bee.id;
         beeElement.className = 'bee';
+        
+        // Create spawn particles for new bee
+        createSpawnParticles(bee.x, bee.y);
         
         // Add click handler
         beeElement.addEventListener('click', (e) => {
@@ -6921,6 +6937,20 @@ window.ItemTooltips = (function() {
       beeElement.style.width = bee.size + 'px';
       beeElement.style.height = bee.size + 'px';
       beeElement.style.transform = 'translate3d(-50%, -50%, 0)'; // Hardware acceleration
+      
+      // Update bee appearance and handle death particles
+      if (bee.isDying) {
+        // Check if this bee just started dying (create particles once)
+        if (!beeElement.dataset.particlesCreated) {
+          createSwatParticles(bee.x, bee.y);
+          beeElement.dataset.particlesCreated = 'true';
+        }
+        beeElement.classList.add('bee-dying');
+        beeElement.classList.remove('bee-angry');
+      } else {
+        beeElement.classList.add('bee-angry');
+        beeElement.classList.remove('bee-dying');
+      }
     });
   }
   
@@ -6946,7 +6976,7 @@ window.ItemTooltips = (function() {
     });
   });
 
-  // Escape key to close
+  // Escape key to close, Spacebar to swat
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && currentMinigame) {
       hytopia.sendData({
@@ -6955,8 +6985,117 @@ window.ItemTooltips = (function() {
           type: 'cancel'
         }
       });
+    } else if (e.key === ' ' && currentMinigame && currentMinigame.minigameId === 'bee_minigame') {
+      e.preventDefault(); // Prevent page scroll
+      hytopia.sendData({
+        type: 'minigameInput',
+        inputData: {
+          type: 'spacebarSwat'
+        }
+      });
     }
   });
+
+  // Particle System Functions
+  function createSwatParticles(x, y) {
+    const gameArea = document.getElementById('bee-game-area');
+    if (!gameArea) return;
+    
+    // Create multiple particles for swat effect
+    for (let i = 0; i < 8; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle swat-particle';
+      
+      // Random offset for particle spread
+      const offsetX = (Math.random() - 0.5) * 40;
+      const offsetY = (Math.random() - 0.5) * 40;
+      
+      particle.style.left = x + '%';
+      particle.style.top = y + '%';
+      particle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      
+      gameArea.appendChild(particle);
+      
+      // Remove particle after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 600);
+    }
+  }
+  
+  function createSpawnParticles(x, y) {
+    const gameArea = document.getElementById('bee-game-area');
+    if (!gameArea) return;
+    
+    // Create sparkle particles for bee spawn
+    for (let i = 0; i < 5; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle spawn-particle';
+      
+      // Random offset for sparkle spread
+      const offsetX = (Math.random() - 0.5) * 60;
+      const offsetY = (Math.random() - 0.5) * 60;
+      
+      particle.style.left = x + '%';
+      particle.style.top = y + '%';
+      particle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      
+      gameArea.appendChild(particle);
+      
+      // Remove particle after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 800);
+    }
+  }
+  
+  function createDamageParticles(x, y) {
+    const gameArea = document.getElementById('bee-game-area');
+    if (!gameArea) return;
+    
+    // Create damage burst particles
+    for (let i = 0; i < 6; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle damage-particle';
+      
+      // Random offset for damage burst
+      const offsetX = (Math.random() - 0.5) * 80;
+      const offsetY = (Math.random() - 0.5) * 80;
+      
+      particle.style.left = x + '%';
+      particle.style.top = y + '%';
+      particle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      
+      gameArea.appendChild(particle);
+      
+      // Remove particle after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 700);
+    }
+    
+    // Add floating heart particle for damage
+    const heartParticle = document.createElement('div');
+    heartParticle.className = 'particle heart-particle';
+    heartParticle.textContent = '💔';
+    heartParticle.style.left = x + '%';
+    heartParticle.style.top = y + '%';
+    
+    gameArea.appendChild(heartParticle);
+    
+    // Remove heart particle after animation
+    setTimeout(() => {
+      if (heartParticle.parentNode) {
+        heartParticle.parentNode.removeChild(heartParticle);
+      }
+    }, 1000);
+  }
 </script>
 
 <style>
@@ -7068,6 +7207,24 @@ window.ItemTooltips = (function() {
     cursor: crosshair;
     min-height: 400px;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s ease;
+  }
+
+  .screen-shake {
+    animation: screen-shake 0.5s ease-in-out;
+  }
+
+  @keyframes screen-shake {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-5px); }
+    20% { transform: translateX(5px); }
+    30% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    50% { transform: translateX(-2px); }
+    60% { transform: translateX(2px); }
+    70% { transform: translateX(-1px); }
+    80% { transform: translateX(1px); }
+    90% { transform: translateX(0); }
   }
 
   /* Add some nature elements to the background */
@@ -7109,43 +7266,30 @@ window.ItemTooltips = (function() {
 
   .bee {
     position: absolute;
-    width: 30px;
-    height: 30px;
-    background: radial-gradient(circle at 30% 30%, #FF6B6B, #F44336);
-    border: 2px solid #D32F2F;
-    border-radius: 50%;
+    background: transparent;
+    border: none;
     transform: translate(-50%, -50%);
     z-index: 15;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(255, 0, 0, 0.4);
-    animation: bee-fly 0.4s ease-in-out infinite alternate;
     cursor: pointer;
     transition: all 0.15s ease-out;
     will-change: transform, left, top;
   }
 
   .bee:hover {
-    transform: translate(-50%, -50%) scale(1.15);
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+    transform: translate(-50%, -50%) scale(1.2);
     z-index: 16;
   }
 
   .bee::before {
     content: '🐝';
-    font-size: 18px;
+    font-size: 200%;
+    display: block;
     animation: bee-wings 0.15s ease-in-out infinite alternate;
   }
 
-  .bee::after {
-    content: '💢';
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    font-size: 12px;
-    animation: pulse-anger 0.6s ease-in-out infinite alternate;
-  }
 
   @keyframes player-hit {
     0% { transform: translate(-50%, -50%) scale(1); }
@@ -7155,19 +7299,122 @@ window.ItemTooltips = (function() {
     100% { transform: translate(-50%, -50%) scale(1); }
   }
 
-  @keyframes bee-fly {
-    0% { transform: translate(-50%, -50%) rotate(-1.5deg); }
-    100% { transform: translate(-50%, -50%) rotate(1.5deg); }
-  }
-
   @keyframes bee-wings {
     0% { transform: scale(1) rotate(-0.5deg); }
     100% { transform: scale(1.05) rotate(0.5deg); }
   }
 
-  @keyframes pulse-anger {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0.6; transform: scale(1.2); }
+  .bee-dying {
+    pointer-events: none;
+    animation: bee-death 1s ease-out forwards;
+  }
+
+  @keyframes bee-death {
+    0% { 
+      transform: translate(-50%, -50%) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    50% { 
+      transform: translate(-50%, -50%) rotate(180deg) scale(0.8);
+      opacity: 0.7;
+    }
+    100% { 
+      transform: translate(-50%, -50%) rotate(360deg) scale(0.3);
+      opacity: 0;
+    }
+  }
+
+  /* Particle Effects */
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .swat-particle {
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, #FFD700, #FFA500);
+    border-radius: 50%;
+    animation: swat-burst 0.6s ease-out forwards;
+  }
+
+  .spawn-particle {
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, #90EE90, #32CD32);
+    border-radius: 50%;
+    animation: spawn-sparkle 0.8s ease-out forwards;
+  }
+
+  .damage-particle {
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, #FF6B6B, #FF4444);
+    border-radius: 50%;
+    animation: damage-burst 0.7s ease-out forwards;
+  }
+
+  .heart-particle {
+    font-size: 16px;
+    color: #FF6B6B;
+    animation: heart-float 1s ease-out forwards;
+  }
+
+  @keyframes swat-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes spawn-sparkle {
+    0% {
+      transform: translate(-50%, -50%) scale(0) rotate(0deg);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.2) rotate(180deg);
+      opacity: 0.9;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.3) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes damage-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+    }
+    30% {
+      transform: translate(-50%, -50%) scale(2);
+      opacity: 0.9;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes heart-float {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) translateY(-50px) scale(0.3);
+      opacity: 0;
+    }
   }
 
   .bee-hud {
@@ -7223,8 +7470,8 @@ window.ItemTooltips = (function() {
     }
     
     .bee {
-      min-width: 40px;
-      min-height: 40px;
+      min-width: 80px;
+      min-height: 80px;
     }
   }
 
@@ -7247,8 +7494,8 @@ window.ItemTooltips = (function() {
     }
     
     .bee {
-      min-width: 35px;
-      min-height: 35px;
+      min-width: 70px;
+      min-height: 70px;
     }
   }
 </style>
